@@ -1,22 +1,15 @@
 from nonebot import on_command, CommandSession, get_bot
 import random
 from nullbot.utils.helpers import multiline_msg_generator
+from nullbot.utils.deco import group_only, superuser_only, admin_only, owner_only
 
 
 @on_command('ls', only_to_me=False, shell_like=True)
+@group_only
+@admin_only
 async def handle_ls(session: CommandSession):
-    
-    # handle group message only
-    if 'group_id' not in session.ctx:
-        return
-    
     group_id = session.ctx['group_id']
     user_id = session.ctx['user_id']
-
-    # permission check
-    if not await is_owner_or_admin(group_id, user_id):
-        await session.send('Permission denied.')
-        return
 
     # args
     argv = session.args['argv']
@@ -42,15 +35,6 @@ async def handle_ls(session: CommandSession):
                 break
     except Exception as e:
         print(type(e), e)
-
-
-async def is_owner_or_admin(group_id, user_id):
-    bot = get_bot()
-
-    data = await bot.get_group_member_info(group_id=group_id, user_id=user_id)
-    role = data.get('role', 'member')
-
-    return role in ['owner', 'admin']
 
 
 @on_command('tql', aliases=('666',), only_to_me=False)

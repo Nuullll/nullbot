@@ -1,4 +1,6 @@
 from nullbot.config import MAX_MESSAGE_LEN
+from nonebot import CommandSession
+
 
 def multiline_msg_generator(lines=None, lineno=False, lineno_format='#{} ', max_msg_len=MAX_MESSAGE_LEN):
     msg = ''
@@ -16,3 +18,16 @@ def multiline_msg_generator(lines=None, lineno=False, lineno_format='#{} ', max_
             sz = 0
     
     yield msg.strip()
+
+
+def validate_role(session: CommandSession, expected=('owner', 'admin')):
+    try:
+        role = session.ctx['sender'].get('role', 'member')
+    except Exception:
+        return False
+
+    return role in expected
+
+
+is_admin = lambda s: validate_role(s, ('owner', 'admin'))
+is_owner = lambda s: validate_role(s, ('owner', ))
