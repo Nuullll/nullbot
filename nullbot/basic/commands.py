@@ -1,5 +1,4 @@
 from nonebot import on_command, CommandSession, get_bot
-import random
 from nullbot.utils.helpers import multiline_msg_generator
 from nullbot.utils.deco import group_only, superuser_only, admin_only, owner_only
 

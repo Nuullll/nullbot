@@ -1,5 +1,5 @@
 from nonebot import get_bot, on_command, on_request, on_notice, CommandSession, RequestSession, NoticeSession
-from nullbot.manager.mongo.db import DataManager
+from spideroj.mongo import DataManager
 from nullbot.utils.deco import superuser_only
 from nullbot.utils.helpers import multiline_msg_generator
 
