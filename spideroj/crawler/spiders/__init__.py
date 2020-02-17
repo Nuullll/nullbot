@@ -1,4 +1,4 @@
-from requests_html import HTMLSession
+from requests_html import AsyncHTMLSession
 import json
 import importlib
 from spideroj.config import PLATFORM_URLS, CRAWL_URLS
@@ -12,16 +12,17 @@ class Spider(object):
     spider_type = 'summary'     # or 'submission'
 
     @staticmethod
-    def get_page(url, js_support=False):
-        session = HTMLSession()
-        r = session.get(url)
+    async def get_page(url, js_support=False):
+        session = AsyncHTMLSession()
+        r = await session.get(url)
 
         if js_support:
-            r.html.render(wait=5.0, timeout=15.0)
+            await r.html.arender(wait=10.0, timeout=60.0)
 
         if r.status_code == 200:
             return True, r.html
 
+        r.close()
         return False, None
 
     @classmethod
@@ -68,10 +69,10 @@ class Spider(object):
     def get_user_url(self, username):
         return self.server_url.format(username)
         
-    def get_user_data(self, username):
+    async def get_user_data(self, username):
         url = self.get_user_url(username)
 
-        ok, context = self.get_page(url, self.js_support)
+        ok, context = await self.get_page(url, self.js_support)
 
         if not ok:
             print("Failed to get profile page of [{}]".format(username))

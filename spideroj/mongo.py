@@ -6,8 +6,7 @@ from datetime import timezone, datetime
 
 _client = pymongo.MongoClient()
 _db = _client[MONGODB_NAME]
-_id_collection = _db[ID_CHECK_DB]
-_id_collection.create_index([('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
+_id_db = _client[ID_CHECK_DB]
 
 
 class DataManager(object):
@@ -15,11 +14,12 @@ class DataManager(object):
     def __init__(self, group_id):
         self.group_id = str(group_id)
         self.collection = _db[self.group_id]
+        self.id_collection = _id_db[self.group_id]
     
     @staticmethod
-    def get_profile(platform, user_id):
+    async def get_profile(platform, user_id):
         spider = Spider.get_spider(platform)
-        ok, data = spider.get_user_data(user_id)
+        ok, data = await spider.get_user_data(user_id)
         
         return ok, data
     
@@ -32,6 +32,7 @@ class DataManager(object):
             self.reset()
 
         self.collection.create_index('qq_id', unique=True, background=True)
+        self.id_collection.create_index([('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
 
         success = 0
         for member in members:
@@ -58,9 +59,11 @@ class DataManager(object):
     def reset(self):
         self.collection.drop()
         self.collection = _db[self.group_id]
-    
+        self.id_collection.drop()
+        self.id_collection = _id_db[self.group_id]
+
     def bind_account(self, qq_id, user_id, platform):
-        res = _id_collection.insert_one({
+        res = self.id_collection.insert_one({
             'platform': platform,
             'user_id': user_id,
             'qq_id': qq_id
@@ -72,14 +75,14 @@ class DataManager(object):
         return True
     
     def unbind_account(self, qq_id, user_id, platform):
-        _id_collection.delete_one({
+        self.id_collection.delete_one({
             'platform': platform,
             'user_id': user_id,
             'qq_id': qq_id
         })
 
     def is_account_binded(self, user_id, platform):
-        doc = _id_collection.find_one({
+        doc = self.id_collection.find_one({
             'platform': platform,
             'user_id': user_id
         })
@@ -90,7 +93,7 @@ class DataManager(object):
         return False, 0
     
     def query_binded_accounts(self, qq_id):
-        docs = _id_collection.find({
+        docs = self.id_collection.find({
             'qq_id': qq_id
         })
 
@@ -111,8 +114,8 @@ class DataManager(object):
 
         self.unbind_account(qq_id, user_id, platform)
 
-    def get_and_save_user_summary(self, qq_id, user_id, platform):
-        ok, fields = self.get_profile(platform, user_id)
+    async def get_and_save_user_summary(self, qq_id, user_id, platform):
+        ok, fields = await self.get_profile(platform, user_id)
 
         if not ok:
             return False

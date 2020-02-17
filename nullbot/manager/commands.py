@@ -1,5 +1,6 @@
 from nonebot import on_command, CommandSession
 from nullbot.utils.deco import group_only, superuser_only
+from nullbot.utils.helpers import parse_cq_at
 from spideroj.config import PLATFORM_URLS
 from spideroj.mongo import DataManager
 import re
@@ -84,7 +85,7 @@ register https://leetcode.com/nuullll
             await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
         return
 
-    ok = dm.get_and_save_user_summary(qq_id, user_id, platform)
+    ok = await dm.get_and_save_user_summary(qq_id, user_id, platform)
 
     if not ok:
         await session.send("ID错误或网络错误！请检查后重试。")
@@ -162,3 +163,60 @@ async def handle_accounts(session: CommandSession):
         msg = '并没有绑定账号。'
     
     await session.send(msg, at_sender=True)
+
+
+@on_command('register_for', only_to_me=False, shell_like=True)
+@group_only
+@superuser_only
+async def handle_register_for(session: CommandSession):
+    group_id = session.ctx['group_id']
+    
+    argv = session.args['argv']
+    qq_id, url = argv
+
+    try:
+        if qq_id.isnumeric():
+            qq_id = int(qq_id)
+        else:
+            # infer CQ code
+            qq_id = parse_cq_at(qq_id)
+    except:
+        await session.finish('参数错误！')
+        return
+    
+    dm = DataManager(group_id)
+
+    platform = ''
+    user_id = ''
+    for oj, template in PLATFORM_URLS.items():
+        m = re.search(template.format('([a-zA-Z0-9_-]+)'), url)
+        if m:
+            platform = oj
+            user_id = m.group(1)
+            break
+    
+    if not user_id:
+        await session.send("输入有误！")
+        await session.finish(USAGE)
+        return
+
+    binded, bind_qq = dm.is_account_binded(user_id, platform)
+    if binded:
+        if bind_qq == qq_id:
+            await session.finish(f"您已绑定{user_id}@{platform}，请勿重复操作。")
+        else:
+            await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
+        return
+
+    ok = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+
+    if not ok:
+        await session.send("ID错误或网络错误！请检查后重试。")
+        await session.finish(USAGE)
+        return
+    
+    if not dm.bind_account(qq_id, user_id, platform):
+        await session.finish("绑定失败，代码线程不安全。")
+        return
+
+    await session.send(f"{user_id}@{platform}绑定成功！")
