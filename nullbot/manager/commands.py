@@ -100,7 +100,7 @@ register https://leetcode.com/nuullll
     await session.send(f"Solved Question: {data['Solved Question']}")
 
 
-@on_command('deregister', aliased=('unregister',), only_to_me=False, shell_like=True)
+@on_command('deregister', aliases=('unregister',), only_to_me=False, shell_like=True)
 @group_only
 async def handle_deregister(session: CommandSession):
     USAGE = """用法： 
