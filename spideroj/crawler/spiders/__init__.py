@@ -14,7 +14,7 @@ class Spider(object):
     @staticmethod
     async def get_page(url, js_support=False):
         if js_support:
-            return Spider.render_html_with_splash(url)
+            return await Spider.render_html_with_splash(url)
         
         session = AsyncHTMLSession()
         r = await session.get(url)
