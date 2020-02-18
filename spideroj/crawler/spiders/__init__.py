@@ -1,7 +1,7 @@
 from requests_html import AsyncHTMLSession
 import json
 import importlib
-from spideroj.config import PLATFORM_URLS, CRAWL_URLS
+from spideroj.config import PLATFORM_URLS, CRAWL_URLS, SPLASH_API_ROOT, SPLASH_QUERY
 
 
 class Spider(object):
@@ -13,16 +13,15 @@ class Spider(object):
 
     @staticmethod
     async def get_page(url, js_support=False):
+        if js_support:
+            return Spider.render_html_with_splash(url)
+        
         session = AsyncHTMLSession()
         r = await session.get(url)
-
-        if js_support:
-            await r.html.arender(wait=10.0, timeout=60.0)
 
         if r.status_code == 200:
             return True, r.html
 
-        r.close()
         return False, None
 
     @classmethod
@@ -62,6 +61,16 @@ class Spider(object):
             server_url = PLATFORM_URLS[platform]
         
         return c(server_url)
+    
+    @staticmethod
+    async def render_html_with_splash(url):
+        session = AsyncHTMLSession()
+        r = await session.get(SPLASH_API_ROOT + SPLASH_QUERY.format(url))
+
+        if r.status_code == 200:
+            return True, r.html
+
+        return False, None
 
     def __init__(self, server_url):
         self.server_url = server_url
