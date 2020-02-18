@@ -118,7 +118,7 @@ class DataManager(object):
         ok, fields = await self.get_profile(platform, user_id)
 
         if not ok:
-            return False
+            return False, {}
         
         self.collection.update_one({
             'qq_id': qq_id
@@ -132,4 +132,4 @@ class DataManager(object):
 
         print(self.collection.find_one({'qq_id': qq_id}))
 
-        return True
+        return True, fields

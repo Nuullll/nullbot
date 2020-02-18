@@ -85,7 +85,7 @@ register https://leetcode.com/nuullll
             await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
         return
 
-    ok = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+    ok, data = await dm.get_and_save_user_summary(qq_id, user_id, platform)
 
     if not ok:
         await session.send("ID错误或网络错误！请检查后重试。")
@@ -97,6 +97,7 @@ register https://leetcode.com/nuullll
         return
 
     await session.send(f"{user_id}@{platform}绑定成功！")
+    await session.send(f"Solved Question: {data['Solved Question']}")
 
 
 @on_command('deregister', only_to_me=False, shell_like=True)
@@ -208,7 +209,7 @@ async def handle_register_for(session: CommandSession):
             await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
         return
 
-    ok = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+    ok, data = await dm.get_and_save_user_summary(qq_id, user_id, platform)
 
     if not ok:
         await session.send("ID错误或网络错误！请检查后重试。")
@@ -220,3 +221,4 @@ async def handle_register_for(session: CommandSession):
         return
 
     await session.send(f"{user_id}@{platform}绑定成功！")
+    await session.send(f"Solved Question: {data['Solved Question']}")
