@@ -1,4 +1,5 @@
 from nonebot.natural_language import on_natural_language, NLPSession
+from nullbot.utils.deco import group_only
 
 
 RECORD = {}
@@ -15,14 +16,17 @@ async def repeat_bullshit(session: NLPSession):
         RECORD[group_id] = [msg, 1]
         return
     
-    prev_msg, count = RECORD[group_id]
-    print("Message [{}] repeated {} times.".format(prev_msg, count))
+    prev_msg = RECORD[group_id][0]
 
     if msg != prev_msg:
         RECORD[group_id] = [msg, 1]
         return
-    
+
+    RECORD[group_id][1] += 1
+    count = RECORD[group_id][1]
+
+    print("Message [{}] repeated {} times.".format(prev_msg, count))
+
     if count == 3:
         await session.send(msg)
         print("Repeated bullshit: {}".format(msg))
-    RECORD[group_id][1] += 1

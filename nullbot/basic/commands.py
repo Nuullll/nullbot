@@ -34,8 +34,3 @@ async def handle_ls(session: CommandSession):
                 break
     except Exception as e:
         print(type(e), e)
-
-
-@on_command('tql', aliases=('666',), only_to_me=False)
-async def repeat_tql(session: CommandSession):
-    await session.send(session.ctx['message'])
