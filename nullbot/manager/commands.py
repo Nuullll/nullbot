@@ -1,14 +1,12 @@
 from nonebot import on_command, CommandSession
-from nullbot.utils.deco import group_only, superuser_only
+from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.utils.helpers import parse_cq_at
 from spideroj.config import PLATFORM_URLS
 from spideroj.mongo import DataManager
 import re
 
 
-@on_command('init_db', only_to_me=False, shell_like=True)
-@group_only
-@superuser_only
+@on_command('init_db', only_to_me=False, shell_like=True, permission=SUPERUSER)
 async def handle_init_db(session: CommandSession):
     argv = session.args['argv']
     cleanup = True if '-c' in argv else False
@@ -27,9 +25,7 @@ async def handle_init_db(session: CommandSession):
     await session.send('成功导入{}位成员信息'.format(success))
 
 
-@on_command('reset_db')
-@group_only
-@superuser_only
+@on_command('reset_db', permission=SUPERUSER)
 async def handle_reset_db(session: CommandSession):
     group_id = session.ctx['group_id']
     DataManager(group_id).reset()
@@ -37,8 +33,7 @@ async def handle_reset_db(session: CommandSession):
     await session.send('数据库已重置')
 
 
-@on_command('register', only_to_me=False)
-@group_only
+@on_command('register', only_to_me=False, permission=GROUP)
 async def handle_register(session: CommandSession):
     example = "\n".join([f"{oj}: {url.format('<id>')}" for oj, url in PLATFORM_URLS.items()])
     USAGE = """用法： 
@@ -100,8 +95,7 @@ register https://leetcode.com/nuullll
     await session.send(f"Solved Question: {data['Solved Question']}")
 
 
-@on_command('deregister', aliases=('unregister',), only_to_me=False, shell_like=True)
-@group_only
+@on_command('deregister', aliases=('unregister',), only_to_me=False, shell_like=True, permission=GROUP)
 async def handle_deregister(session: CommandSession):
     USAGE = """用法： 
 deregister [-a] [platform] [user_id]
@@ -149,8 +143,7 @@ deregister leetcodecn nuullll
     await session.finish("解绑成功。")
 
 
-@on_command('accounts')
-@group_only
+@on_command('accounts', only_to_me=False, permission=GROUP)
 async def handle_accounts(session: CommandSession):
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
@@ -166,9 +159,7 @@ async def handle_accounts(session: CommandSession):
     await session.send(msg, at_sender=True)
 
 
-@on_command('register_for', only_to_me=False, shell_like=True)
-@group_only
-@superuser_only
+@on_command('register_for', only_to_me=False, shell_like=True, permission=SUPERUSER)
 async def handle_register_for(session: CommandSession):
     group_id = session.ctx['group_id']
     

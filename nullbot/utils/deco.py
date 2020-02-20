@@ -1,3 +1,5 @@
+# deprecated
+
 from nonebot import CommandSession
 from nullbot.config import SUPERUSERS
 from nullbot.utils.helpers import is_admin, is_owner

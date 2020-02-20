@@ -1,12 +1,11 @@
 from nonebot.natural_language import on_natural_language, NLPSession
-from nullbot.utils.deco import group_only
+from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 
 
 RECORD = {}
 
 
-@on_natural_language(only_to_me=False)
-@group_only
+@on_natural_language(only_to_me=False, permission=GROUP)
 async def repeat_bullshit(session: NLPSession):
     group_id = session.ctx['group_id']
 

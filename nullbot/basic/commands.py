@@ -1,11 +1,9 @@
 from nonebot import on_command, CommandSession, get_bot
 from nullbot.utils.helpers import multiline_msg_generator
-from nullbot.utils.deco import group_only, superuser_only, admin_only, owner_only
+from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 
 
-@on_command('ls', only_to_me=False, shell_like=True)
-@group_only
-@admin_only
+@on_command('ls', only_to_me=False, shell_like=True, permission=GROUP_ADMIN)
 async def handle_ls(session: CommandSession):
     group_id = session.ctx['group_id']
     user_id = session.ctx['user_id']
