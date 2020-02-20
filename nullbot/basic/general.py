@@ -27,6 +27,6 @@ async def repeat_bullshit(session: NLPSession):
 
     print("Message [{}] repeated {} times.".format(prev_msg, count))
 
-    if count == 3:
+    if count == 2:
         await session.send(msg)
         print("Repeated bullshit: {}".format(msg))
