@@ -1,8 +1,12 @@
 from nonebot.natural_language import on_natural_language, NLPSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
+from nullbot.config import MONITOR_RECENT_MESSAGES, REPEAT_THRESHOLD
+from collections import defaultdict
 
 
-RECORD = {}
+RECENT = defaultdict(list)
+FREQ = defaultdict(lambda: defaultdict(lambda:0))
+LAST_SENT = defaultdict(str)
 
 
 @on_natural_language(only_to_me=False, permission=GROUP)
@@ -10,22 +14,21 @@ async def repeat_bullshit(session: NLPSession):
     group_id = session.ctx['group_id']
 
     msg = session.msg.strip()
-
-    if group_id not in RECORD:
-        RECORD[group_id] = [msg, 1]
+    if msg == LAST_SENT[group_id]:
         return
+
+    RECENT[group_id].append(msg)
+    FREQ[group_id][msg] += 1
+
+    if len(RECENT[group_id]) > MONITOR_RECENT_MESSAGES:
+        trash = RECENT[group_id].pop(0)
+        FREQ[group_id][trash] -= 1
+        if FREQ[group_id][trash] == 0:
+            del FREQ[group_id][trash]
     
-    prev_msg = RECORD[group_id][0]
-
-    if msg != prev_msg:
-        RECORD[group_id] = [msg, 1]
-        return
-
-    RECORD[group_id][1] += 1
-    count = RECORD[group_id][1]
-
-    print("Message [{}] repeated {} times.".format(prev_msg, count))
-
-    if count == 2:
+    if FREQ[group_id][msg] >= REPEAT_THRESHOLD:
         await session.send(msg)
-        print("Repeated bullshit: {}".format(msg))
+        LAST_SENT[group_id] = msg
+
+        print(f"Bullshit repeated: {msg}")
+        print(f"RECENT: {RECENT}")
