@@ -141,4 +141,12 @@ class DataManager(object):
         return True, snap
     
     def load_latest_snapshot(self, qq_id, user_id, platform):
-        pass
+        
+        doc = self.collection.find_one({
+            'qq_id': qq_id
+        })
+
+        data = doc['accounts'][f"{user_id}@{platform}"]["snapshots"][-1]
+        snapshot = Snapshot(user_id, platform, **data)
+
+        return snapshot
