@@ -1,8 +1,9 @@
 import importlib
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
+import pytz
 
 
-CST = timezone(offset=+timedelta(hours=8))
+CST = pytz.timezone("Asia/Beijing")
 
 
 class Snapshot(object):
@@ -29,11 +30,12 @@ class Snapshot(object):
 
     @property
     def cst_time(self):
-        return CST.fromutc(self.utc_time)
+        cst_dt = self.utc_time.replace(tzinfo=pytz.utc).astimezone(CST)
+        return CST.normalize(cst_dt)
     
     @property
     def lines(self):
-        result = ["Timestamp: " + self.cst_time.strftime("%Y-%m-%d %H:%M:%S")]
+        result = ["Timestamp: " + self.cst_time.strftime("%Y-%m-%d %H:%M:%S CST")]
         for field in self.fields:
             result.append(field.serialize(self.data.get(field.name, 'NaN')))
         
