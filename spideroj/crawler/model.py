@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 
 
-CST = pytz.timezone("Asia/Beijing")
+CST = pytz.timezone("Asia/Shanghai")
 
 
 class Snapshot(object):
