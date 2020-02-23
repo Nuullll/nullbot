@@ -2,6 +2,7 @@ import pymongo
 from spideroj.config import MONGODB_NAME, ID_CHECK_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
+from spideroj.crawler.model import Snapshot
 
 
 _client = pymongo.MongoClient()
@@ -118,13 +119,15 @@ class DataManager(object):
         ok, fields = await self.get_profile(platform, user_id)
 
         if not ok:
-            return False, {}
+            return False, None
+
+        timestamp = self.utc_now()
         
         self.collection.update_one({
             'qq_id': qq_id
         }, {
             '$set': {
-                f'accounts.{user_id}@{platform}.{self.utc_now()}': {
+                f'accounts.{user_id}@{platform}.{timestamp}': {
                     **fields
                 }
             }
@@ -132,4 +135,6 @@ class DataManager(object):
 
         print(self.collection.find_one({'qq_id': qq_id}))
 
-        return True, fields
+        snap = Snapshot(user_id, platform, timestamp, fields)
+
+        return True, snap

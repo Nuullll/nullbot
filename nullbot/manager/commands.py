@@ -4,6 +4,8 @@ from nullbot.utils.helpers import parse_cq_at
 from spideroj.config import PLATFORM_URLS
 from spideroj.mongo import DataManager
 import re
+from random import shuffle
+from nullbot.utils.helpers import multiline_msg_generator
 
 
 @on_command('init_db', only_to_me=False, shell_like=True, permission=SUPERUSER)
@@ -35,64 +37,7 @@ async def handle_reset_db(session: CommandSession):
 
 @on_command('register', only_to_me=False, permission=GROUP)
 async def handle_register(session: CommandSession):
-    example = "\n".join([f"{oj}: {url.format('<id>')}" for oj, url in PLATFORM_URLS.items()])
-    USAGE = """用法： 
-register <your OJ profile url>
-
-目前支持的OJ平台：
-""" + example + """
-
-示例：
-register https://leetcode.com/nuullll
-"""
-
-    url = session.current_arg_text.strip()
-
-    if not url:
-        await session.finish(USAGE)
-        return
-    
-    url = url.split()[0]
-
-    platform = ''
-    user_id = ''
-    for oj, template in PLATFORM_URLS.items():
-        m = re.search(template.format('([a-zA-Z0-9_-]+)'), url)
-        if m:
-            platform = oj
-            user_id = m.group(1)
-            break
-    
-    if not user_id:
-        await session.send("输入有误！")
-        await session.finish(USAGE)
-        return
-    
-    group_id = session.ctx['group_id']
-    qq_id = session.ctx['user_id']
-    dm = DataManager(group_id)
-
-    binded, bind_qq = dm.is_account_binded(user_id, platform)
-    if binded:
-        if bind_qq == qq_id:
-            await session.finish(f"您已绑定{user_id}@{platform}，请勿重复操作。")
-        else:
-            await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
-        return
-
-    ok, data = await dm.get_and_save_user_summary(qq_id, user_id, platform)
-
-    if not ok:
-        await session.send("ID错误或网络错误！请检查后重试。")
-        await session.finish(USAGE)
-        return
-    
-    if not dm.bind_account(qq_id, user_id, platform):
-        await session.finish("绑定失败，代码线程不安全。")
-        return
-
-    await session.send(f"{user_id}@{platform}绑定成功！")
-    await session.send(f"Solved Question: {data['Solved Question']}")
+    await register_helper(session)
 
 
 @on_command('deregister', aliases=('unregister',), only_to_me=False, shell_like=True, permission=GROUP)
@@ -161,23 +106,51 @@ async def handle_accounts(session: CommandSession):
 
 @on_command('register_for', only_to_me=False, shell_like=True, permission=SUPERUSER)
 async def handle_register_for(session: CommandSession):
+    await register_helper(session, for_other=True)
+
+
+async def register_helper(session, for_other=False):
+
+    examples = [f"{oj}: {url.format('<id>')}" for oj, url in PLATFORM_URLS.items()]
+    shuffle(examples)
+
+    USAGE = """
+用法： 
+register <your OJ profile url>
+
+目前支持的OJ平台：
+""" + "\n".join(examples) + """
+
+示例：
+register https://leetcode.com/nuullll
+"""
+
     group_id = session.ctx['group_id']
-    
-    argv = session.args['argv']
-    qq_id, url = argv
 
-    try:
-        if qq_id.isnumeric():
-            qq_id = int(qq_id)
-        else:
-            # infer CQ code
-            qq_id = parse_cq_at(qq_id)
-    except:
-        await session.finish('参数错误！')
-        return
-    
-    dm = DataManager(group_id)
+    if not for_other:
+        url = session.current_arg_text.strip()
 
+        if not url:
+            await session.finish("未检测到url\n" + USAGE)
+            return
+        
+        url = url.split()[0]
+        
+        qq_id = session.ctx['user_id']
+    else:
+        argv = session.args['argv']
+        qq_id, url = argv
+
+        try:
+            if qq_id.isnumeric():
+                qq_id = int(qq_id)
+            else:
+                # infer CQ code
+                qq_id = parse_cq_at(qq_id)
+        except:
+            await session.finish('参数错误！')
+            return
+    
     platform = ''
     user_id = ''
     for oj, template in PLATFORM_URLS.items():
@@ -188,9 +161,10 @@ async def handle_register_for(session: CommandSession):
             break
     
     if not user_id:
-        await session.send("输入有误！")
-        await session.finish(USAGE)
+        await session.finish("请检查URL格式\n" + USAGE)
         return
+
+    dm = DataManager(group_id)
 
     binded, bind_qq = dm.is_account_binded(user_id, platform)
     if binded:
@@ -200,11 +174,10 @@ async def handle_register_for(session: CommandSession):
             await session.finish(f"绑定失败，{user_id}@{platform}已被用户[CQ:at,qq={bind_qq}]绑定！")
         return
 
-    ok, data = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+    ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
 
     if not ok:
         await session.send("ID错误或网络错误！请检查后重试。")
-        await session.finish(USAGE)
         return
     
     if not dm.bind_account(qq_id, user_id, platform):
@@ -212,4 +185,5 @@ async def handle_register_for(session: CommandSession):
         return
 
     await session.send(f"{user_id}@{platform}绑定成功！")
-    await session.send(f"Solved Question: {data['Solved Question']}")
+    for msg in multiline_msg_generator(snapshot.lines):
+        await session.send(msg)

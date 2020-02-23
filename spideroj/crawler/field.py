@@ -15,3 +15,6 @@ class Field(object):
         self.json_parser = json_parser
 
         self.cleaner = cleaner
+    
+    def serialize(self, value):
+        return f"{self.name}: {value}"
