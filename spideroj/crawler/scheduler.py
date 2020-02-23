@@ -27,7 +27,7 @@ class CrawlTask(object):
 
             self._load_checkpoint()
 
-            self.debug("Crawl Task Created.")
+            print("Crawl Task Created.")
         else:
             raise Exception("Multiple CrawlTask instances are not allowed.")
     
@@ -66,7 +66,7 @@ class CrawlTask(object):
                     dm = DataManager(group_id)
                     fails = await dm.get_and_save_all_user_summary()
 
-                    self.debug("Update Failures: " + repr(fails))
+                    await self.debug("Update Failures: " + repr(fails))
                 
                 self.updating = False
                 self._save_checkpoint
