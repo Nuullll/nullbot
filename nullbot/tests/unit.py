@@ -34,13 +34,23 @@ async def test_db_refactor(session: CommandSession):
     await session.send(str(snapshot.accepted))
 
 
+@on_command('show_db', permission=SUPERUSER)
+async def show_db(session: CommandSession):
+    group_id = 1234
+    dm = DataManager(group_id)
+
+    for doc in dm.collection.find({}):
+        print(doc)
+    
+
 @on_command('do_db_refactor', permission=SUPERUSER)
 async def do_db_refactor(session: CommandSession):
     group_id = 1234
 
     dm = DataManager(group_id)
 
-    for doc in dm.collection.find({}):
+    res = [doc for doc in dm.collection.find({})]
+    for doc in res:
         qq_id = doc['qq_id']
         if 'accounts' not in doc or len(doc['accounts']) == 0:
             continue
@@ -62,6 +72,4 @@ async def do_db_refactor(session: CommandSession):
                     }
                 })
 
-    for doc in dm.collection.find({}):
-        print(doc)
     
