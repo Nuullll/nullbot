@@ -2,6 +2,7 @@ from nonebot import get_bot, on_command, on_request, on_notice, CommandSession, 
 from nonebot.permission import PRIVATE, SUPERUSER
 from spideroj.mongo import DataManager
 from nullbot.utils.helpers import multiline_msg_generator
+import asyncio
 
 
 QQ_ID = 724463877
@@ -72,4 +73,12 @@ async def do_db_refactor(session: CommandSession):
                     }
                 })
 
-    
+
+@on_command('test_timer', permission=SUPERUSER)
+async def test_timer(session: CommandSession):
+    async def timer():
+        for count in range(10):
+            print(count)
+            await asyncio.sleep(1)
+            
+    task = asyncio.create_task(timer())
