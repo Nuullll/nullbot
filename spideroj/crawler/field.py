@@ -17,4 +17,10 @@ class Field(object):
         self.cleaner = cleaner
     
     def serialize(self, value):
-        return f"{self.name}: {value}"
+        vstr = f"{value}"
+
+        if isinstance(value, list) and len(value) == 2:
+            n, d = value
+            vstr = f"{n} / {d}"
+        
+        return f"{self.name}: {vstr}"
