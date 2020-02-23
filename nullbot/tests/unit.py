@@ -23,3 +23,12 @@ async def test_send_private_msg(session: CommandSession):
 async def test_at(session: CommandSession):
     await tell_dad('欢迎[CQ:at,qq={}]'.format(QQ_ID))
     
+
+@on_command('test_db_refactor', permission=SUPERUSER)
+async def test_db_refactor(session: CommandSession):
+    group_id = 1234
+
+    dm = DataManager(group_id)
+    
+    ok, snapshot = dm.get_and_save_user_summary(QQ_ID, 'nuullll', 'leetcode')
+    await session.send(snapshot.accepted)

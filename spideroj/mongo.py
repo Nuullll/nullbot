@@ -126,9 +126,10 @@ class DataManager(object):
         self.collection.update_one({
             'qq_id': qq_id
         }, {
-            '$set': {
-                f'accounts.{user_id}@{platform}.{timestamp}': {
-                    **fields
+            '$push': {
+                f'accounts.{user_id}@{platform}.snapshots': {
+                    'timestamp': timestamp,
+                    'data': fields
                 }
             }
         }, upsert=True)
@@ -138,3 +139,6 @@ class DataManager(object):
         snap = Snapshot(user_id, platform, timestamp, fields)
 
         return True, snap
+    
+    def load_latest_snapshot(self, qq_id, user_id, platform):
+        pass

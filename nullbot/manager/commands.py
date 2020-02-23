@@ -111,6 +111,9 @@ async def handle_register_for(session: CommandSession):
 
 async def register_helper(session, for_other=False):
 
+    await session.finish("数据库升级中，命令不可用！")
+    return
+
     examples = [f"{oj}: {url.format('<id>')}" for oj, url in PLATFORM_URLS.items()]
     shuffle(examples)
 
@@ -215,3 +218,12 @@ async def query_registered(session: CommandSession):
     for msg in multiline_msg_generator(lines=lines, lineno=True):
         await session.send(msg)
 
+
+@on_command('progress', only_to_me=False, permission=GROUP)
+async def show_progress(session: CommandSession):
+    group_id = session.ctx['group_id']
+    qq_id = session.ctx['user_id']
+
+    dm = DataManager(group_id)
+
+    
