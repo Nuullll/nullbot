@@ -150,3 +150,22 @@ class DataManager(object):
         snapshot = Snapshot(user_id, platform, **data)
 
         return snapshot
+    
+    async def get_and_save_all_user_summary(self):
+        qqs = []
+        
+        for doc in self.collection.find({}):
+            qqs.append(doc['qq_id'])
+        
+        fails = []
+        
+        for qq_id in qqs:
+            accounts = self.query_binded_accounts(qq_id)
+
+            for user_id, platform in accounts:
+                ok, fields = await self.get_and_save_user_summary(qq_id, user_id, platform)
+
+                if not ok:
+                    fails.append((qq_id, user_id, platform))
+
+        return fails

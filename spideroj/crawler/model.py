@@ -1,4 +1,8 @@
 import importlib
+from datetime import datetime, timezone, timedelta
+
+
+CST = timezone(offset=+timedelta(hours=8))
 
 
 class Snapshot(object):
@@ -20,8 +24,16 @@ class Snapshot(object):
         return c.fields
     
     @property
+    def utc_time(self):
+        return datetime.utcfromtimestamp(self.timestamp)
+
+    @property
+    def cst_time(self):
+        return CST.fromutc(self.utc_time)
+    
+    @property
     def lines(self):
-        result = []
+        result = ["Timestamp: " + self.cst_time.strftime("%Y-%m-%d %H:%M:%S")]
         for field in self.fields:
             result.append(field.serialize(self.data.get(field.name, 'NaN')))
         

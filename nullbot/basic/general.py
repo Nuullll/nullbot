@@ -2,6 +2,8 @@ from nonebot.natural_language import on_natural_language, NLPSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.config import MONITOR_RECENT_MESSAGES, REPEAT_THRESHOLD
 from collections import defaultdict
+from spideroj.crawler.scheduler import CrawlTask
+import asyncio
 
 
 RECENT = defaultdict(list)
@@ -32,3 +34,10 @@ async def repeat_bullshit(session: NLPSession):
 
         print(f"Bullshit repeated: {msg}")
         print(f"RECENT: {RECENT}")
+
+
+@on_natural_language(only_to_me=False)
+async def autostart(session: NLPSession):
+    task = CrawlTask.get()
+
+    asyncio.create_task(task.monitor())
