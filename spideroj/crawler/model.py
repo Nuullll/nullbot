@@ -23,7 +23,7 @@ class Snapshot(object):
     def lines(self):
         result = []
         for field in self.fields:
-            result.append(field.serialize(self.data.get(field.name, 'NaN'))
+            result.append(field.serialize(self.data.get(field.name, 'NaN')))
         
         return result
 
