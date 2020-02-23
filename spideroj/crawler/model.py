@@ -21,11 +21,11 @@ class Snapshot(object):
     
     @property
     def lines(self):
-        lines = []
+        result = []
         for field in self.fields:
-            lines.append(field.serialize(self.data.get(field.name, 'NaN'))
+            result.append(field.serialize(self.data.get(field.name, 'NaN'))
         
-        return lines
+        return result
 
     @property
     def accepted(self):
