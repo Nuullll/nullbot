@@ -233,3 +233,17 @@ async def show_progress(session: CommandSession):
     
     for msg in multiline_msg_generator(lines):
         await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+
+@on_command('update', permission=SUPERUSER)
+async def update_database(session: CommandSession):
+    group_id = session.ctx['group_id']
+
+    dm = DataManager(group_id)
+    fails = await dm.get_and_save_all_user_summary()
+
+    print(fails)
+    await session.send("Data updated.")
+
+    if fails:
+        await session.send(f"Failures: {repr(fails)}")
