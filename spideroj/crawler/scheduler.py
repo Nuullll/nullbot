@@ -71,7 +71,7 @@ class CrawlTask(object):
                 self.updating = False
                 self._save_checkpoint
 
-            asyncio.sleep(60)
+            await asyncio.sleep(60)
     
     async def debug(self, msg):
         bot = nonebot.get_bot()
