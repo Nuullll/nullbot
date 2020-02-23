@@ -25,7 +25,7 @@ class Snapshot(object):
     
     @property
     def utc_time(self):
-        return datetime.utcfromtimestamp(self.timestamp)
+        return datetime.fromtimestamp(self.timestamp, timezone.utc)
 
     @property
     def cst_time(self):
