@@ -187,3 +187,31 @@ register https://leetcode.com/nuullll
     await session.send(f"{user_id}@{platform}绑定成功！")
     for msg in multiline_msg_generator(snapshot.lines):
         await session.send(msg)
+
+
+@on_command('registered', only_to_me=False, shell_like=True, permission=GROUP_ADMIN)
+async def query_registered(session: CommandSession):
+    argv = session.args['argv']
+    
+    group_id = session.ctx['group_id']
+    dm = DataManager(group_id)
+
+    members = await session.bot.get_group_member_list(group_id=group_id)
+
+    lines = []
+    for member in members:
+        alias = member['card'] if member['card'] else member['nickname']
+        qq_id = member['user_id']
+
+        accounts = dm.query_binded_accounts(qq_id)
+        msg = f"{alias}: "
+        if accounts:
+            msg += ", ".join([f"{u}@{p}" for u, p in accounts])
+        else:
+            msg += "NaN"
+
+        lines.append(msg)
+    
+    for msg in multiline_msg_generator(lines=lines, lineno=True):
+        await session.send(msg)
+
