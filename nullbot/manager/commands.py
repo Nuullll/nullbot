@@ -213,7 +213,7 @@ async def query_registered(session: CommandSession):
         lines.append(msg)
     
     for msg in multiline_msg_generator(lines=lines, lineno=True):
-        await session.send(msg)
+        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
 
 @on_command('progress', only_to_me=False, permission=GROUP)
@@ -232,4 +232,4 @@ async def show_progress(session: CommandSession):
         lines.extent(snap.lines)
     
     for msg in multiline_msg_generator(lines):
-        session.send(msg)
+        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
