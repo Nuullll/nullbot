@@ -229,7 +229,7 @@ async def show_progress(session: CommandSession):
     for user_id, platform in accounts:
         snap = dm.load_latest_snapshot(qq_id, user_id, platform)
         lines.append(f"{user_id}@{platform}: ")
-        lines.extent(snap.lines)
+        lines.extend(snap.lines)
     
     for msg in multiline_msg_generator(lines):
         session.send(msg)
