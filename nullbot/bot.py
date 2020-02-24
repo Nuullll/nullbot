@@ -8,8 +8,8 @@ ROOT_DIR = os.path.abspath(os.path.join(PACKAGE_DIR, os.pardir))
 sys.path.append(ROOT_DIR)
 
 
-TEST = True
-PLUGINS = False
+TEST = False
+PLUGINS = True
 
 
 if __name__ == "__main__":
@@ -31,5 +31,5 @@ if __name__ == "__main__":
             os.path.join(PACKAGE_DIR, 'tests'),
             'tests'
         )
-        
+
     nonebot.run()
