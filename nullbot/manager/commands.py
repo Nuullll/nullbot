@@ -262,11 +262,11 @@ async def report(session: CommandSession):
     endtime = datetime.now()
 
     data = dm.report(starttime, endtime)
-    data = [[alias, ac_now, ac_now - ac_before] for alias, ac_before, ac_now in data]
+    data = [[alias, ac_now, ac_now - ac_before] for alias, ac_before, ac_now in data if ac_now > 0]
 
     data.sort(reverse=True, key=itemgetter(2, 1))
 
-    lines = autoalign(data, formatter=lambda x: "| {}\t| {:<5}(+{})\t|".format(*x))
+    lines = autoalign(data, formatter=lambda x: "| {}\t| {:<5}\t| (+{})\t|".format(*x))
 
     header = "{} - {}\n".format(starttime.strftime("%Y/%m/%d %H:%M"), endtime.strftime("%Y/%m/%d %H:%M"))
     header += "Name  Accepted  (+delta)"

@@ -2,8 +2,9 @@ import asyncio
 from datetime import datetime
 import os
 import nonebot
-from nullbot.config import AUTO_UPDATES
+from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT
 from spideroj.mongo import DataManager
+from nonebot.command import call_command
 
 
 class CrawlTask(object):
@@ -67,6 +68,9 @@ class CrawlTask(object):
                     fails = await dm.get_and_save_all_user_summary()
 
                     await self.debug("Update Failures: " + repr(fails))
+
+                    if group_id in AUTO_DAILY_REPORT:
+                        await call_command(nonebot.get_bot(), {'group_id': group_id}, 'report')
                 
                 self.updating = False
                 self._save_checkpoint
