@@ -51,7 +51,9 @@ class DataManager(object):
                 self.members.update_one({
                     'qq_id': qq
                 }, {
-                    'is_active': False
+                    '$set': {
+                        'is_active': False
+                    }
                 })
         
         success = 0
