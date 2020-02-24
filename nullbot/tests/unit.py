@@ -68,8 +68,11 @@ async def refactor_ids(session: CommandSession):
 
         for doc in collection.find({}):
             qq_id = doc['qq_id']
-            accounts = doc['accounts']
-            for key, value in accounts.items():
+
+            if 'accounts' not in doc:
+                continue
+
+            for key, value in doc['accounts'].items():
                 user_id, platform = key.split('@')
 
                 for snapshot in value['snapshots']:
