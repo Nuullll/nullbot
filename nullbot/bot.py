@@ -8,19 +8,28 @@ ROOT_DIR = os.path.abspath(os.path.join(PACKAGE_DIR, os.pardir))
 sys.path.append(ROOT_DIR)
 
 
+TEST = True
+PLUGINS = False
+
+
 if __name__ == "__main__":
     nonebot.init(config)
     nonebot.load_builtin_plugins()
-    nonebot.load_plugins(
-        os.path.join(PACKAGE_DIR, 'basic'),
-        'basic'
-    )
-    nonebot.load_plugins(
-        os.path.join(PACKAGE_DIR, 'manager'),
-        'manager'
-    )
-    nonebot.load_plugins(
-        os.path.join(PACKAGE_DIR, 'tests'),
-        'tests'
-    )
+
+    if PLUGINS:
+        nonebot.load_plugins(
+            os.path.join(PACKAGE_DIR, 'basic'),
+            'basic'
+        )
+        nonebot.load_plugins(
+            os.path.join(PACKAGE_DIR, 'manager'),
+            'manager'
+        )
+    
+    if TEST:
+        nonebot.load_plugins(
+            os.path.join(PACKAGE_DIR, 'tests'),
+            'tests'
+        )
+        
     nonebot.run()

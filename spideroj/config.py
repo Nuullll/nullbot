@@ -1,5 +1,6 @@
-MONGODB_NAME = 'oj'
-ID_CHECK_DB = 'ids'
+MEMBER_DB = 'oj'
+OJID_DB = 'ids'
+SNAPSHOT_DB = 'snapshots'
 
 PLATFORM_URLS = {
     'leetcode': r'https://leetcode.com/{}',

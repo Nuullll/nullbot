@@ -1,21 +1,22 @@
 import pymongo
-from spideroj.config import MONGODB_NAME, ID_CHECK_DB
+from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
 from spideroj.crawler.model import Snapshot
 
 
 _client = pymongo.MongoClient()
-_db = _client[MONGODB_NAME]
-_id_db = _client[ID_CHECK_DB]
+_member_db = _client[MEMBER_DB]
+_ids = _client[OJID_DB]['all']
+_ids.create_index([('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
+_snapshot_db = _client[SNAPSHOT_DB]
 
 
 class DataManager(object):
     
     def __init__(self, group_id):
         self.group_id = str(group_id)
-        self.collection = _db[self.group_id]
-        self.id_collection = _id_db[self.group_id]
+        self.members = _member_db[self.group_id]
     
     @staticmethod
     async def get_profile(platform, user_id):
@@ -26,14 +27,19 @@ class DataManager(object):
     
     @staticmethod
     def utc_now():
-        return int(datetime.now(tz=timezone.utc).timestamp())
+        return int(datetime.utcnow().timestamp())
+
+    @staticmethod
+    def get_snapshots(qq_id):
+        snapshots = _snapshot_db[str(qq_id)]
+        snapshots.create_index([('timestamp', pymongo.DESCENDING), ('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
+        return snapshots
 
     def init(self, members, cleanup=False):
         if cleanup:
             self.reset()
 
-        self.collection.create_index('qq_id', unique=True, background=True)
-        self.id_collection.create_index([('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
+        self.members.create_index('qq_id', unique=True, background=True)
 
         success = 0
         for member in members:
@@ -44,7 +50,7 @@ class DataManager(object):
 
     def upsert_member(self, qq_id, group_alias, join_time=0):
         try:
-            self.collection.update_one({
+            self.members.update_one({
                 'qq_id': qq_id
             }, {
                 '$set': {
@@ -58,13 +64,11 @@ class DataManager(object):
         return True
 
     def reset(self):
-        self.collection.drop()
-        self.collection = _db[self.group_id]
-        self.id_collection.drop()
-        self.id_collection = _id_db[self.group_id]
+        self.members.drop()
+        self.members = _member_db[self.group_id]
 
     def bind_account(self, qq_id, user_id, platform):
-        res = self.id_collection.insert_one({
+        res = _ids.insert_one({
             'platform': platform,
             'user_id': user_id,
             'qq_id': qq_id
@@ -76,14 +80,14 @@ class DataManager(object):
         return True
     
     def unbind_account(self, qq_id, user_id, platform):
-        self.id_collection.delete_one({
+        _ids.delete_one({
             'platform': platform,
             'user_id': user_id,
             'qq_id': qq_id
         })
 
     def is_account_binded(self, user_id, platform):
-        doc = self.id_collection.find_one({
+        doc = _ids.find_one({
             'platform': platform,
             'user_id': user_id
         })
@@ -94,7 +98,7 @@ class DataManager(object):
         return False, 0
     
     def query_binded_accounts(self, qq_id):
-        docs = self.id_collection.find({
+        docs = _ids.find({
             'qq_id': qq_id
         })
 
@@ -105,14 +109,6 @@ class DataManager(object):
         return res
 
     def remove_account(self, qq_id, user_id, platform):
-        self.collection.update_one({
-            'qq_id': qq_id
-        }, {
-            '$unset': {
-                'accounts.{user_id}@{platform}': ''
-            }
-        })
-
         self.unbind_account(qq_id, user_id, platform)
 
     async def get_and_save_user_summary(self, qq_id, user_id, platform):
@@ -122,19 +118,16 @@ class DataManager(object):
             return False, None
 
         timestamp = self.utc_now()
-        
-        self.collection.update_one({
-            'qq_id': qq_id
-        }, {
-            '$push': {
-                f'accounts.{user_id}@{platform}.snapshots': {
-                    'timestamp': timestamp,
-                    'data': fields
-                }
-            }
-        }, upsert=True)
 
-        print(self.collection.find_one({'qq_id': qq_id}))
+        snapshots = self.get_snapshots(qq_id)
+        snapshots.insert_one({
+            'timestamp': timestamp,
+            'user_id': user_id,
+            'platform': platform,
+            'data': fields
+        })
+
+        print(snapshots.find_one({'timestamp': timestamp}))
 
         snap = Snapshot(user_id, platform, timestamp, fields)
 
@@ -142,19 +135,20 @@ class DataManager(object):
     
     def load_latest_snapshot(self, qq_id, user_id, platform):
         
-        doc = self.collection.find_one({
-            'qq_id': qq_id
+        snapshots = self.get_snapshots(qq_id)
+        doc = snapshots.find_one({
+            'user_id': user_id,
+            'platform': platform
         })
 
-        data = doc['accounts'][f"{user_id}@{platform}"]["snapshots"][-1]
-        snapshot = Snapshot(user_id, platform, **data)
+        snapshot = Snapshot(**doc)
 
         return snapshot
     
     async def get_and_save_all_user_summary(self):
         qqs = []
         
-        for doc in self.collection.find({}):
+        for doc in self.members.find({}):
             qqs.append(doc['qq_id'])
         
         fails = []

@@ -3,6 +3,8 @@ from nonebot.permission import PRIVATE, SUPERUSER
 from spideroj.mongo import DataManager
 from nullbot.utils.helpers import multiline_msg_generator
 import asyncio
+from spideroj.config import OJID_DB
+import pymongo
 
 
 QQ_ID = 724463877
@@ -37,42 +39,14 @@ async def test_db_refactor(session: CommandSession):
 
 @on_command('show_db', permission=SUPERUSER)
 async def show_db(session: CommandSession):
-    group_id = 1234
-    dm = DataManager(group_id)
+    db = pymongo.MongoClient()[OJID_DB]
+    target = db['all']
 
-    for doc in dm.collection.find({}):
+    docs = target.find()
+    for doc in docs:
         print(doc)
     
-
-@on_command('do_db_refactor', permission=SUPERUSER)
-async def do_db_refactor(session: CommandSession):
-    group_id = 1234
-
-    dm = DataManager(group_id)
-
-    res = [doc for doc in dm.collection.find({})]
-    for doc in res:
-        qq_id = doc['qq_id']
-        if 'accounts' not in doc or len(doc['accounts']) == 0:
-            continue
-        
-        for key, data in doc['accounts'].items():
-            
-            for timestamp, fields in data.items():
-                dm.collection.update_one({
-                    'qq_id': qq_id
-                }, {
-                    '$push': {
-                        f"accounts.{key}.snapshots": {
-                            "timestamp": int(timestamp),
-                            "data": fields
-                        }
-                    }, 
-                    '$unset': {
-                        f"accounts.{key}.{timestamp}": ""
-                    }
-                })
-
+    print(docs.count())
 
 @on_command('test_timer', permission=SUPERUSER)
 async def test_timer(session: CommandSession):
@@ -82,3 +56,15 @@ async def test_timer(session: CommandSession):
             await asyncio.sleep(1)
             
     task = asyncio.create_task(timer())
+
+
+@on_command('refactor_ids', permission=SUPERUSER)
+async def refactor_ids(session: CommandSession):
+    db = pymongo.MongoClient()[OJID_DB]
+    target = db['all']
+
+    for group_id in [GROUP_ID_WEEKLY, GROUP_ID_200]:
+        collection = db[str(group_id)]
+
+        for doc in collection.find({}):
+            target.insert_one(doc)
