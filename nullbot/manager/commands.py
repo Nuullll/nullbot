@@ -262,7 +262,7 @@ async def report(session: CommandSession):
     endtime = datetime.now()
 
     data = dm.report(starttime, endtime)
-    data = [(alias, ac_now, ac_now - ac_before) for alias, ac_before, ac_now in data]
+    data = [[alias, ac_now, ac_now - ac_before] for alias, ac_before, ac_now in data]
 
     data.sort(reverse=True, key=itemgetter(2, 1))
 
