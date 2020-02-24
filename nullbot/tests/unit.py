@@ -71,3 +71,11 @@ async def refactor_ids(session: CommandSession):
                 target.insert_one(doc)
             except:
                 pass
+
+
+@on_command('drop_db', permission=SUPERUSER)
+async def drop_db(session: CommandSession):
+    db = pymongo.MongoClient()[OJID_DB]
+
+    for group_id in [GROUP_ID_200, GROUP_ID_WEEKLY]:
+        db[str(group_id)].drop()
