@@ -203,7 +203,7 @@ class DataManager(object):
 
         lb = snapshots.find_one({
             'timestamp': {
-                'lte': reftime
+                '$lte': reftime
             },
             'user_id': user_id,
             'platform': platform
@@ -211,7 +211,7 @@ class DataManager(object):
 
         ub = snapshots.find_one({
             'timestamp': {
-                'gt': reftime
+                '$gt': reftime
             },
             'user_id': user_id,
             'platform': platform
