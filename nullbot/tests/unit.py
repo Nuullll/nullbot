@@ -67,4 +67,7 @@ async def refactor_ids(session: CommandSession):
         collection = db[str(group_id)]
 
         for doc in collection.find({}):
-            target.insert_one(doc)
+            try:
+                target.insert_one(doc)
+            except:
+                pass

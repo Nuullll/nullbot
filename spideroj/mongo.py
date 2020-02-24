@@ -1,4 +1,5 @@
 import pymongo
+from pymongo.errors import DuplicateKeyError
 from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
@@ -68,13 +69,13 @@ class DataManager(object):
         self.members = _member_db[self.group_id]
 
     def bind_account(self, qq_id, user_id, platform):
-        res = _ids.insert_one({
-            'platform': platform,
-            'user_id': user_id,
-            'qq_id': qq_id
-        })
-
-        if not res:
+        try:
+            res = _ids.insert_one({
+                'platform': platform,
+                'user_id': user_id,
+                'qq_id': qq_id
+            })
+        except DuplicateKeyError:
             return False
         
         return True
@@ -120,12 +121,15 @@ class DataManager(object):
         timestamp = self.utc_now()
 
         snapshots = self.get_snapshots(qq_id)
-        snapshots.insert_one({
-            'timestamp': timestamp,
-            'user_id': user_id,
-            'platform': platform,
-            'data': fields
-        })
+        try:
+            snapshots.insert_one({
+                'timestamp': timestamp,
+                'user_id': user_id,
+                'platform': platform,
+                'data': fields
+            })
+        except DuplicateKeyError:
+            print("Warning: same timestamped data.")
 
         print(snapshots.find_one({'timestamp': timestamp}))
 
