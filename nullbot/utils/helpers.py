@@ -68,14 +68,12 @@ def cst_dt_to_utc_ts(cst_dt):
     return utc_dt_to_ts(utc_dt)
 
 
-def last_sunday(hour=18):
+def last_sunday(hour=18, minute=0):
     today = datetime.today()
     wd = today.weekday()
 
     last = today - timedelta(days=wd+1)
-    last.replace(hour=hour)
-
-    return last
+    return last.replace(hour=hour, minute=minute)
 
 
 def print_width(s):

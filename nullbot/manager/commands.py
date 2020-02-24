@@ -273,4 +273,4 @@ async def report(session: CommandSession):
     await session.send(header)
 
     for msg in multiline_msg_generator(lines, lineno=True):
-        await session.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
