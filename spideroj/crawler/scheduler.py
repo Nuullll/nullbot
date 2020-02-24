@@ -10,7 +10,7 @@ from nonebot.command import call_command
 class CrawlTask(object):
 
     _instance = None
-    planned = "18:00"
+    planned = "18:05"
 
     @staticmethod
     def get():
@@ -61,7 +61,7 @@ class CrawlTask(object):
         while True:
             if self.now == self.planned and not self.updating and not self.done_today:
                 self.updating = True
-                self.debug("Scheduler: updating database.")
+                await self.debug("Scheduler: updating database.")
 
                 for group_id in AUTO_UPDATES:
                     dm = DataManager(group_id)
