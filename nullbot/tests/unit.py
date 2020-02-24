@@ -3,7 +3,7 @@ from nonebot.permission import PRIVATE, SUPERUSER
 from spideroj.mongo import DataManager
 from nullbot.utils.helpers import multiline_msg_generator
 import asyncio
-from spideroj.config import OJID_DB
+from spideroj.config import OJID_DB, MEMBER_DB, SNAPSHOT_DB
 import pymongo
 
 
@@ -39,8 +39,8 @@ async def test_db_refactor(session: CommandSession):
 
 @on_command('show_db', permission=SUPERUSER)
 async def show_db(session: CommandSession):
-    db = pymongo.MongoClient()[OJID_DB]
-    target = db['all']
+    db = pymongo.MongoClient()[SNAPSHOT_DB]
+    target = db['724463877']
 
     docs = target.find()
     for doc in docs:
@@ -58,19 +58,34 @@ async def test_timer(session: CommandSession):
     task = asyncio.create_task(timer())
 
 
-@on_command('refactor_ids', permission=SUPERUSER)
+@on_command('refactor_snapshots', permission=SUPERUSER)
 async def refactor_ids(session: CommandSession):
-    db = pymongo.MongoClient()[OJID_DB]
-    target = db['all']
+    src = pymongo.MongoClient()[MEMBER_DB]
+    dst = pymongo.MongoClient()[SNAPSHOT_DB]
 
     for group_id in [GROUP_ID_WEEKLY, GROUP_ID_200]:
-        collection = db[str(group_id)]
+        collection = src[str(group_id)]
 
         for doc in collection.find({}):
-            try:
-                target.insert_one(doc)
-            except:
-                pass
+            qq_id = doc['qq_id']
+            accounts = doc['accounts']
+            for key, value in accounts.items():
+                user_id, platform = key.split('@')
+
+                for snapshot in value['snapshots']:
+                    timestamp = snapshot['timestamp']
+                    data = snapshot['data']
+
+                    target = dst[str(qq_id)]
+                    try:
+                        target.insert_one({
+                            'timestamp': timestamp,
+                            'user_id': user_id,
+                            'platform': platform,
+                            'data': data
+                        })
+                    except Exception as e:
+                        print(e)
 
 
 @on_command('drop_db', permission=SUPERUSER)
