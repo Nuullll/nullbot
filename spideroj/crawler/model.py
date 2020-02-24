@@ -8,7 +8,7 @@ CST = pytz.timezone("Asia/Shanghai")
 
 class Snapshot(object):
 
-    def __init__(self, user_id, platform, timestamp, data):
+    def __init__(self, user_id, platform, timestamp, data, **kargs):
         self.user_id = user_id
         self.platform = platform
         self.timestamp = timestamp
