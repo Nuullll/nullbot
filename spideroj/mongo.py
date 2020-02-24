@@ -259,7 +259,7 @@ class DataManager(object):
         
         return vs, ve
     
-    def report(self, cst_starttime, cst_endtime, field='accpeted'):
+    def report(self, cst_starttime, cst_endtime, field='accepted'):
         
         lines = []
 
