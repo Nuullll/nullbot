@@ -1,9 +1,5 @@
 import importlib
-from datetime import datetime, timezone
-import pytz
-
-
-CST = pytz.timezone("Asia/Shanghai")
+from nullbot.utils.helpers import utc_ts_to_cst_dt
 
 
 class Snapshot(object):
@@ -25,13 +21,8 @@ class Snapshot(object):
         return c.fields
     
     @property
-    def utc_time(self):
-        return datetime.fromtimestamp(self.timestamp, timezone.utc)
-
-    @property
     def cst_time(self):
-        cst_dt = self.utc_time.replace(tzinfo=pytz.utc).astimezone(CST)
-        return CST.normalize(cst_dt)
+        return utc_ts_to_cst_dt(self.timestamp)
     
     @property
     def lines(self):

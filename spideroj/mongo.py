@@ -4,6 +4,7 @@ from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
 from spideroj.crawler.model import Snapshot
+from nullbot.utils.helpers import cst_dt_to_utc_ts
 
 
 _client = pymongo.MongoClient()
@@ -42,12 +43,36 @@ class DataManager(object):
 
         self.members.create_index('qq_id', unique=True, background=True)
 
+        member_set = {member['user_id'] for member in members}
+        qq_list = self.get_all('qq_id', keep_inactive=True)
+        
+        for qq in qq_list:
+            if qq not in member_set:
+                self.members.update_one({
+                    'qq_id': qq
+                }, {
+                    'is_active': False
+                })
+        
         success = 0
         for member in members:
             alias = member['card'] if member['card'] else member['nickname']
             success += self.upsert_member(qq_id=member['user_id'], group_alias=alias, join_time=member['join_time'])
         
         return success
+
+    def get_all(self, field='qq_id', keep_inactive=False):
+        docs = self.members.find({}, {field: 1, 'is_active': 1})
+
+        if keep_inactive:
+            return [doc[field] for doc in docs]
+
+        result = []
+        for doc in docs:
+            if 'is_active' not in doc or doc['is_active']:
+                result.append(doc[field])
+        
+        return result
 
     def upsert_member(self, qq_id, group_alias, join_time=0):
         try:
@@ -56,7 +81,8 @@ class DataManager(object):
             }, {
                 '$set': {
                     'group_alias': group_alias,
-                    'join_time': join_time
+                    'join_time': join_time,
+                    'is_active': True
                 }
             }, upsert=True)
         except:
@@ -167,3 +193,86 @@ class DataManager(object):
                     fails.append((qq_id, user_id, platform))
 
         return fails
+
+    def load_snapshot_around(self, qq_id, user_id, platform, cst_datetime):
+
+        snapshots = self.get_snapshots(qq_id)
+        reftime = cst_dt_to_utc_ts(cst_datetime)
+
+        lb = snapshots.find_one({
+            'timestamp': {
+                'lte': reftime
+            },
+            'user_id': user_id,
+            'platform': platform
+        }, sort=[('timestamp', -1)])
+
+        ub = snapshots.find_one({
+            'timestamp': {
+                'gt': reftime
+            },
+            'user_id': user_id,
+            'platform': platform
+        }, sort=[('timestamp', 1)])
+
+        if not lb and not ub:
+            raise FileNotFoundError("No snapshots.")
+
+        pick = ''
+        if lb and ub:
+            if ub['timestamp'] - reftime < reftime - lb['timestamp']:
+                pick = 'ub'
+            else:
+                pick = 'lb'
+        else:
+            if lb:
+                pick = 'lb'
+            else:
+                pick = 'rb'
+
+        doc = lb if pick == 'lb' else ub
+
+        return Snapshot(**doc)
+    
+    def report_by_account(self, qq_id, user_id, platform, cst_starttime, cst_endtime, field='accepted'):
+        
+        start = self.load_snapshot_around(qq_id, user_id, platform, cst_starttime)
+        end = self.load_snapshot_around(qq_id, user_id, platform, cst_endtime)
+
+        vs = getattr(start, field)
+        ve = getattr(end, field)
+
+        return vs, ve
+
+    def report_by_qq(self, qq_id, cst_starttime, cst_endtime, field='accepted'):
+
+        accounts = self.query_binded_accounts(qq_id)
+
+        vs, ve = 0, 0
+        for user_id, platform in accounts:
+            ds, de = self.report_by_account(qq_id, user_id, platform, cst_starttime, cst_endtime, field)
+
+            vs += ds
+            ve += de
+        
+        return vs, ve
+    
+    def report(self, cst_starttime, cst_endtime, field='accpeted'):
+        
+        lines = []
+
+        docs = self.members.find()
+
+        for doc in docs:
+            if 'is_active' in doc and not doc['is_active']:
+                continue
+
+            qq_id = doc['qq_id']
+            alias = doc['group_alias']
+
+            vs, ve = self.report_by_qq(qq_id, cst_starttime, cst_endtime, field)
+
+            lines.append((alias, vs, ve))
+        
+        return lines
+

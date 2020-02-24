@@ -5,7 +5,9 @@ from spideroj.config import PLATFORM_URLS
 from spideroj.mongo import DataManager
 import re
 from random import shuffle
-from nullbot.utils.helpers import multiline_msg_generator
+from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign
+from datetime import datetime
+from operator import itemgetter
 
 
 @on_command('init_db', only_to_me=False, shell_like=True, permission=SUPERUSER)
@@ -248,3 +250,27 @@ async def update_database(session: CommandSession):
 
     if fails:
         await session.send(f"Failures: {repr(fails)}")
+
+
+@on_command('report', permission=GROUP_ADMIN)
+async def report(session: CommandSession):
+    group_id = session.ctx['group_id']
+
+    dm = DataManager(group_id)
+
+    starttime = last_sunday()
+    endtime = datetime.now()
+
+    data = dm.report(starttime, endtime)
+    data = [(alias, ac_now, ac_now - ac_before) for alias, ac_before, ac_now in data]
+
+    data.sort(reverse=True, key=itemgetter(2, 1))
+
+    lines = autoalign(data, formatter=lambda x: "| {}\t| {:<5}(+{})\t|".format(*x))
+
+    header = "{} - {}\n".format(starttime.strftime("%Y/%m/%d %H:%M"), endtime.strftime("%Y/%m/%d %H:%M"))
+    header += "Name  Accepted  (+delta)"
+    await session.send(header)
+
+    for msg in multiline_msg_generator(lines, lineno=True):
+        await session.send_msg_rate_limited(group_id=group_id, message=msg)
