@@ -39,8 +39,8 @@ async def test_db_refactor(session: CommandSession):
 
 @on_command('show_db', permission=SUPERUSER)
 async def show_db(session: CommandSession):
-    db = pymongo.MongoClient()[SNAPSHOT_DB]
-    target = db['724463877']
+    db = pymongo.MongoClient()[MEMBER_DB]
+    target = db[str(GROUP_ID_200)]
 
     docs = target.find()
     for doc in docs:
@@ -58,42 +58,15 @@ async def test_timer(session: CommandSession):
     task = asyncio.create_task(timer())
 
 
-@on_command('refactor_snapshots', permission=SUPERUSER)
+@on_command('refactor_members', permission=SUPERUSER)
 async def refactor_ids(session: CommandSession):
     src = pymongo.MongoClient()[MEMBER_DB]
-    dst = pymongo.MongoClient()[SNAPSHOT_DB]
 
     for group_id in [GROUP_ID_WEEKLY, GROUP_ID_200]:
         collection = src[str(group_id)]
 
-        for doc in collection.find({}):
-            qq_id = doc['qq_id']
-
-            if 'accounts' not in doc:
-                continue
-
-            for key, value in doc['accounts'].items():
-                user_id, platform = key.split('@')
-
-                for snapshot in value['snapshots']:
-                    timestamp = snapshot['timestamp']
-                    data = snapshot['data']
-
-                    target = dst[str(qq_id)]
-                    try:
-                        target.insert_one({
-                            'timestamp': timestamp,
-                            'user_id': user_id,
-                            'platform': platform,
-                            'data': data
-                        })
-                    except Exception as e:
-                        print(e)
-
-
-@on_command('drop_db', permission=SUPERUSER)
-async def drop_db(session: CommandSession):
-    db = pymongo.MongoClient()[OJID_DB]
-
-    for group_id in [GROUP_ID_200, GROUP_ID_WEEKLY]:
-        db[str(group_id)].drop()
+        collection.update_many({}, {
+            '$unset': {
+                'accounts': ''
+            }
+        })

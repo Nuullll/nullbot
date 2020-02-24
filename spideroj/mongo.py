@@ -143,7 +143,7 @@ class DataManager(object):
         doc = snapshots.find_one({
             'user_id': user_id,
             'platform': platform
-        })
+        }, sort=[('timestamp', -1)])
 
         snapshot = Snapshot(**doc)
 
