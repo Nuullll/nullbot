@@ -63,14 +63,26 @@ class CrawlTask(object):
                 self.updating = True
                 await self.debug("Scheduler: updating database.")
 
+                bot = nonebot.bot()
+
                 for group_id in AUTO_UPDATES:
                     dm = DataManager(group_id)
+                    
+                    members = await bot.get_group_member_list(group_id=group_id)
+                    dm.init(members)
                     fails = await dm.get_and_save_all_user_summary()
 
                     await self.debug("Update Failures: " + repr(fails))
 
                     if group_id in AUTO_DAILY_REPORT:
-                        await call_command(nonebot.get_bot(), {'group_id': group_id}, 'report')
+                        await call_command(nonebot.get_bot(), {
+                            'post_type': 'message',
+                            'message_type': 'group',
+                            'sub_type': 'normal',
+                            'group_id': group_id,
+                            'message': '',
+                            'raw_message': '',
+                        }, 'report')
                 
                 self.updating = False
                 self._save_checkpoint
