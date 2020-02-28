@@ -26,7 +26,7 @@ class Snapshot(object):
     
     @property
     def lines(self):
-        result = ["Timestamp: " + self.cst_time.strftime("%Y-%m-%d %H:%M:%S UTC")]
+        result = ["Timestamp: " + self.cst_time.strftime("%Y-%m-%d %H:%M:%S CST")]
         for field in self.fields:
             result.append(field.serialize(self.data.get(field.name, 'NaN')))
         

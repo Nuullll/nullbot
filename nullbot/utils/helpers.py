@@ -47,7 +47,7 @@ def parse_cq_at(cqcode):
 
 
 def utc_ts_to_dt(utc_ts):
-    return datetime.fromtimestamp(utc_ts, timezone.utc)
+    return datetime.fromtimestamp(utc_ts)
 
 
 def utc_dt_to_ts(utc_dt):
