@@ -16,5 +16,5 @@ CRAWL_URLS = {
 }
 
 # splash js rendering service
-SPLASH_API_ROOT = 'http://172.17.0.1:8050/render.html'
-SPLASH_QUERY = '?url={}&engine=chromium&wait=3&timeout=20&rend_all=1'
+SPLASH_API_ROOT = 'http://172.18.0.1:8050/render.html'
+SPLASH_QUERY = '?url={}&engine=chromium&wait=6&timeout=60&rend_all=1'

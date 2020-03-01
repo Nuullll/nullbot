@@ -6,7 +6,7 @@ SUPERUSERS = {
 
 COMMAND_START = {'', '/', '!', '／', '！'}
 
-API_ROOT = 'http://172.17.0.1:5700'
+API_ROOT = 'http://172.18.0.1:5700'
 
 HOST = '0.0.0.0'
 PORT = 8099
