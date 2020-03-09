@@ -1,7 +1,8 @@
 from requests_html import AsyncHTMLSession
 import json
 import importlib
-from spideroj.config import PLATFORM_URLS, CRAWL_URLS, SPLASH_API_ROOT, SPLASH_QUERY
+from spideroj.config import PLATFORM_URLS, CRAWL_URLS, SPLASH_API_ROOT, SPLASH_QUERY, SPLASH_LUA_SOURCE_LEETCODECN
+from urllib.parse import urlencode
 
 
 class Spider(object):
@@ -62,10 +63,15 @@ class Spider(object):
         
         return c(server_url)
     
-    @staticmethod
-    async def render_html_with_splash(url):
+    @classmethod
+    async def render_html_with_splash(cls, url):
         session = AsyncHTMLSession()
-        r = await session.get(SPLASH_API_ROOT + SPLASH_QUERY.format(url))
+        splash_url = SPLASH_API_ROOT + SPLASH_QUERY.format(url)
+
+        # if cls.server_name == 'leetcodecn':
+        #     splash_url += '&' + urlencode({'lua_source': SPLASH_LUA_SOURCE_LEETCODECN})
+
+        r = await session.get(splash_url)
 
         if r.status_code == 200:
             return True, r.html

@@ -70,3 +70,29 @@ async def refactor_ids(session: CommandSession):
                 'accounts': ''
             }
         })
+
+
+@on_command('change_field', permission=SUPERUSER)
+async def change_field(session: CommandSession):
+    _ids = pymongo.MongoClient()[OJID_DB]['all']
+
+    docs = _ids.find({
+        'platform': 'leetcodecn'
+    })
+
+    for doc in docs:
+        qq_id = doc['qq_id']
+
+        snapshots = DataManager.get_snapshots(qq_id)
+
+        ss = snapshots.find_and_modify({
+            'platform': 'leetcodecn'
+        }, {
+            "$rename": {
+                "data.Global Ranking": "data.AC Ranking"
+            }
+        })
+
+        print(snapshots.find_one({'platform': 'leetcodecn'}))
+    
+    

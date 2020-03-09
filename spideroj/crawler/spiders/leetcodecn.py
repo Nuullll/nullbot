@@ -22,7 +22,7 @@ class LeetcodecnSpider(Spider):
         ),
 
         Field(
-            name='Global Ranking',
+            name='AC Ranking',
             xpath_selector='//*[@id="lc-content"]/div/div/div[1]/div/div[1]/div/div[3]/span/text()'
         ),
 
@@ -36,5 +36,21 @@ class LeetcodecnSpider(Spider):
             name='Acceptance Rate',
             xpath_selector='//*[@id="lc-content"]/div/div/div[2]/div[2]/div[2]/div[4]/div[4]/span/text()',
             cleaner=Cleaner.get_percent
+        ),
+
+        Field(
+            name='National Ranking',
+            xpath_selector='/html/body/div[1]/div/div[2]/div/div/div[2]/div[2]/div[2]/div[3]/div[2]/div[3]/text()'
+        ),
+
+        Field(
+            name='Global Ranking',
+            xpath_selector='/html/body/div[1]/div/div[2]/div/div/div[2]/div[2]/div[2]/div[3]/div[3]/div[3]/text()'
+        ),
+
+        Field(
+            name='Contest Rating',
+            xpath_selector='/html/body/div[5]/div/div/div/div[2]/text()',
+            cleaner=lambda x: int(re.search(r'\d+', x)[0])
         )
     ]
