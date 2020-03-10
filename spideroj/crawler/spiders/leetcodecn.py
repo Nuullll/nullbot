@@ -46,11 +46,11 @@ class LeetcodecnSpider(Spider):
         Field(
             name='Global Ranking',
             xpath_selector='/html/body/div[1]/div/div[2]/div/div/div[2]/div[2]/div[2]/div[3]/div[3]/div[3]/text()'
-        ),
-
-        Field(
-            name='Contest Rating',
-            xpath_selector='/html/body/div[5]/div/div/div/div[2]/text()',
-            cleaner=lambda x: int(re.search(r'\d+', x)[0])
         )
+
+        # Field(
+        #     name='Contest Rating',
+        #     xpath_selector='/html/body/div[5]/div/div/div/div[2]/text()',
+        #     cleaner=lambda x: int(re.search(r'\d+', x)[0])
+        # )
     ]
