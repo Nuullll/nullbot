@@ -30,3 +30,5 @@ function main(splash, args)
   return splash:html()
 end
 '''
+
+USER_UPDATE_COOLDOWN = 7200

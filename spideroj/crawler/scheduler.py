@@ -75,14 +75,8 @@ class CrawlTask(object):
                     await self.debug("Update Failures: " + repr(fails))
 
                     if group_id in AUTO_DAILY_REPORT:
-                        await call_command(nonebot.get_bot(), {
-                            'post_type': 'message',
-                            'message_type': 'group',
-                            'sub_type': 'normal',
-                            'group_id': group_id,
-                            'message': '',
-                            'raw_message': '',
-                        }, 'report')
+                        ctx = {'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+                        await call_command(nonebot.get_bot(), ctx, 'report')
                 
                 self.updating = False
                 self._save_checkpoint

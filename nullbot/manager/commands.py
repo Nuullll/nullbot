@@ -1,11 +1,11 @@
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.utils.helpers import parse_cq_at
-from spideroj.config import PLATFORM_URLS
+from spideroj.config import PLATFORM_URLS, USER_UPDATE_COOLDOWN
 from spideroj.mongo import DataManager
 import re
 from random import shuffle
-from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign
+from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign, cstnow
 from datetime import datetime
 from operator import itemgetter
 
@@ -227,29 +227,48 @@ async def show_progress(session: CommandSession):
 
     accounts = dm.query_binded_accounts(qq_id)
 
-    lines = []
-    for user_id, platform in accounts:
-        snap = dm.load_latest_snapshot(qq_id, user_id, platform)
-        lines.append(f"{user_id}@{platform}: ")
-        lines.extend(snap.lines)
-        lines.append('')
+    starttime = last_sunday()
+    endtime = dm.get_latest_csttime_by_qq(qq_id)
+
+    vs, ve = dm.report_by_qq(qq_id, starttime, endtime)
+
+    tf = "%Y/%m/%d %H:%M"
+
+    msg = f"""Progress this week:
+[{starttime.strftime(tf)}] Accepted: {vs}
+[{endtime.strftime(tf)}] Accepted: {ve} (+{ve-vs})"""
     
-    for msg in multiline_msg_generator(lines):
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+    await session.send(msg)
 
 
-@on_command('update', permission=SUPERUSER)
+@on_command('update', only_to_me=False, permission=GROUP)
 async def update_database(session: CommandSession):
     group_id = session.ctx['group_id']
+    qq_id = session.ctx['user_id']
 
     dm = DataManager(group_id)
-    fails = await dm.get_and_save_all_user_summary()
+    accounts = dm.query_binded_accounts(qq_id)
 
-    print(fails)
-    await session.send("Data updated.")
+    if not accounts:
+        await session.finish("请先绑定账号！命令：register")
 
-    if fails:
-        await session.send(f"Failures: {repr(fails)}")
+    latest = dm.get_latest_csttime_by_qq(qq_id)
+    now = cstnow()
+    delta = int((now - latest).total_seconds())
+    print(latest, now, delta)
+
+    await session.send(f"最近更新: {latest}")
+    if delta < USER_UPDATE_COOLDOWN:
+        await session.finish(f"技能冷却中：剩余{USER_UPDATE_COOLDOWN-delta}秒")
+    
+    for user_id, platform in accounts:
+        ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+    
+        if not ok:
+            await session.send("ID错误或网络错误！请检查后重试。")
+            
+        for msg in multiline_msg_generator(snapshot.lines):
+            await session.send(msg)
 
 
 @on_command('report', permission=GROUP_ADMIN)
@@ -259,17 +278,17 @@ async def report(session: CommandSession):
     dm = DataManager(group_id)
 
     starttime = last_sunday()
-    endtime = datetime.now()
+    endtime = cstnow()
 
     data = dm.report(starttime, endtime)
     data = [[alias, ac_now, ac_now - ac_before] for alias, ac_before, ac_now in data if ac_now > 0]
 
     data.sort(reverse=True, key=itemgetter(2, 1))
 
-    lines = autoalign(data, formatter=lambda x: "| {}\t| {:<5}\t| (+{})\t|".format(*x))
+    lines = autoalign(data, formatter=lambda x: "| {} | {:<5} (+{}) |".format(*x))
 
-    header = "{} - {}\n".format(starttime.strftime("%Y/%m/%d %H:%M"), endtime.strftime("%Y/%m/%d %H:%M"))
-    header += "Name  Accepted  (+delta)"
+    header = f"{starttime} - {endtime}\n"
+    header += "｜ Name ｜ Accepted (+delta) ｜"
     await session.send(header)
 
     for msg in multiline_msg_generator(lines, lineno=True):

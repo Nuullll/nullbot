@@ -4,7 +4,7 @@ from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
 from spideroj.crawler.model import Snapshot
-from nullbot.utils.helpers import cst_dt_to_utc_ts
+from nullbot.utils.helpers import cst_dt_to_utc_ts, utc_ts_to_cst_dt
 
 
 _client = pymongo.MongoClient()
@@ -176,6 +176,21 @@ class DataManager(object):
         snapshot = Snapshot(**doc)
 
         return snapshot
+
+    def get_latest_csttime_by_account(self, qq_id, user_id, platform):
+        snap = self.load_latest_snapshot(qq_id, user_id, platform)
+        return utc_ts_to_cst_dt(snap.timestamp)
+    
+    def get_latest_csttime_by_qq(self, qq_id):
+        accounts = self.query_binded_accounts(qq_id)
+
+        latest = None
+        for user_id, platform in accounts:
+            cst = self.get_latest_csttime_by_account(qq_id, user_id, platform)
+            if latest is None or cst < latest:
+                latest = cst
+        
+        return latest
     
     async def get_and_save_all_user_summary(self):
         qqs = []

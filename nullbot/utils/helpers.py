@@ -46,6 +46,10 @@ def parse_cq_at(cqcode):
     raise ValueError("Parse CQ error.")
 
 
+def cstnow():
+    return CST.normalize(datetime.now().replace(tzinfo=CST))
+
+
 def utc_ts_to_dt(utc_ts):
     return datetime.fromtimestamp(utc_ts)
 
@@ -73,7 +77,7 @@ def last_sunday(hour=18, minute=0):
     wd = today.weekday()
 
     last = today - timedelta(days=wd+1)
-    return last.replace(hour=hour, minute=minute)
+    return last.replace(hour=hour, minute=minute, tzinfo=CST)
 
 
 def print_width(s):
