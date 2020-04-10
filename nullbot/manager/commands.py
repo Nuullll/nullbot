@@ -1,3 +1,4 @@
+import nonebot
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.utils.helpers import parse_cq_at
@@ -8,6 +9,7 @@ from random import shuffle
 from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign, cstnow
 from datetime import datetime
 from operator import itemgetter
+from nonebot.command import call_command
 
 
 @on_command('init_db', only_to_me=False, shell_like=True, permission=SUPERUSER)
@@ -249,6 +251,8 @@ async def update_database(session: CommandSession):
     dm = DataManager(group_id)
     accounts = dm.query_binded_accounts(qq_id)
 
+    await session.send("正在更新数据", at_sender=True)
+
     if not accounts:
         await session.finish("请先绑定账号！命令：register")
 
@@ -268,7 +272,7 @@ async def update_database(session: CommandSession):
             await session.send("ID错误或网络错误！请检查后重试。")
             
         for msg in multiline_msg_generator(snapshot.lines):
-            await session.send(msg)
+            await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
 
 @on_command('report', permission=GROUP_ADMIN)
@@ -293,3 +297,19 @@ async def report(session: CommandSession):
 
     for msg in multiline_msg_generator(lines, lineno=True):
         await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+
+@on_command('update_all', permission=GROUP_ADMIN)
+async def update_all(session: CommandSession):
+    group_id = session.ctx['group_id']
+
+    dm = DataManager(group_id)
+
+    members = await session.bot.get_group_member_list(group_id=group_id)
+
+    for member in members:
+        print(member)
+        ctx = {'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+        ctx['sender'].update(member)
+        ctx['user_id'] = member['user_id']
+        await call_command(nonebot.get_bot(), ctx, 'update')
