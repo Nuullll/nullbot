@@ -158,6 +158,8 @@ register https://leetcode.com/nuullll
     platform = ''
     user_id = ''
     for oj, template in PLATFORM_URLS.items():
+        # escape special character in template
+        template = template.replace('?', '\?')
         m = re.search(template.format('([a-zA-Z0-9_-]+)'), url)
         if m:
             platform = oj
