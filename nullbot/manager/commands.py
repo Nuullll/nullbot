@@ -249,32 +249,43 @@ async def show_progress(session: CommandSession):
 async def update_database(session: CommandSession):
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
+    debug = session.ctx.get('debug', False)
 
-    dm = DataManager(group_id)
-    accounts = dm.query_binded_accounts(qq_id)
+    if not debug:
+        dm = DataManager(group_id)
+        accounts = dm.query_binded_accounts(qq_id)
 
-    await session.send("正在更新数据", at_sender=True)
+        await session.send("正在更新数据", at_sender=True)
 
-    if not accounts:
-        await session.finish("请先绑定账号！命令：register")
+        if not accounts:
+            await session.finish("请先绑定账号！命令：register")
 
-    latest = dm.get_latest_csttime_by_qq(qq_id)
-    now = cstnow()
-    delta = int((now - latest).total_seconds())
-    print(latest, now, delta)
+        latest = dm.get_latest_csttime_by_qq(qq_id)
+        now = cstnow()
+        delta = int((now - latest).total_seconds())
+        print(latest, now, delta)
 
-    await session.send(f"最近更新: {latest}")
-    if delta < USER_UPDATE_COOLDOWN:
-        await session.finish(f"技能冷却中：剩余{USER_UPDATE_COOLDOWN-delta}秒")
-    
-    for user_id, platform in accounts:
-        ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
-    
-        if not ok:
-            await session.send("ID错误或网络错误！请检查后重试。")
-            
-        for msg in multiline_msg_generator(snapshot.lines):
-            await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.send(f"最近更新: {latest}")
+        if delta < USER_UPDATE_COOLDOWN:
+            await session.finish(f"技能冷却中：剩余{USER_UPDATE_COOLDOWN-delta}秒")
+        
+        for user_id, platform in accounts:
+            ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+        
+            if not ok:
+                await session.send("ID错误或网络错误！请检查后重试。")
+                
+            for msg in multiline_msg_generator(snapshot.lines):
+                await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+    else:
+        dm = DataManager(group_id)
+        accounts = dm.query_binded_accounts(qq_id)
+        
+        for user_id, platform in accounts:
+            ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+                
+            for msg in multiline_msg_generator(snapshot.lines):
+                await session.bot.send_msg_rate_limited(user_id=724463877, message=msg)
 
 
 @on_command('report', permission=GROUP_ADMIN)
@@ -308,10 +319,13 @@ async def update_all(session: CommandSession):
     dm = DataManager(group_id)
 
     members = await session.bot.get_group_member_list(group_id=group_id)
+    await session.send("开始强制更新...")
 
     for member in members:
         print(member)
-        ctx = {'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+        ctx = {'debug': True, 'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
         ctx['sender'].update(member)
         ctx['user_id'] = member['user_id']
         await call_command(nonebot.get_bot(), ctx, 'update')
+    
+    await session.finish("手动更新成功！")

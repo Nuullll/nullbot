@@ -1,8 +1,34 @@
 import nonebot as nb
-from spideroj.crawler.spiders import Spider
+from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT
+from spideroj.mongo import DataManager
 from datetime import datetime
+from nonebot.command import call_command
 import pytz
 
+
+async def debug(self, msg):
+    bot = nb.get_bot()
+
+    await bot.send_private_msg(user_id=724463877, message=msg)
+
+
+@nb.scheduler.scheduled_job('cron', hour='18')
+async def daily_update():
+    bot = nb.get_bot()
+
+    for group_id in AUTO_UPDATES:
+        dm = DataManager(group_id)
+
+        members = await bot.get_group_member_list(group_id=group_id)
+        dm.init(members)
+
+        fails = await dm.get_and_save_all_user_summary()
+
+        await self.debug(f"Group [{group_id}] update failures: {fails}")
+    
+    for group_id in AUTO_DAILY_REPORT:
+        ctx = {'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+        await call_command(bot, ctx, 'report')
 
 # @nb.scheduler.scheduled_job('cron', hour='12')
 # async def report_hns():
