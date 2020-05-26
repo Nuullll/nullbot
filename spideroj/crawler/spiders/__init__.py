@@ -65,16 +65,19 @@ class Spider(object):
     
     @classmethod
     async def render_html_with_splash(cls, url):
-        session = AsyncHTMLSession()
-        splash_url = SPLASH_API_ROOT + SPLASH_QUERY.format(url)
+        try:
+            session = AsyncHTMLSession()
+            splash_url = SPLASH_API_ROOT + SPLASH_QUERY.format(url)
 
-        # if cls.server_name == 'leetcodecn':
-        #     splash_url += '&' + urlencode({'lua_source': SPLASH_LUA_SOURCE_LEETCODECN})
+            # if cls.server_name == 'leetcodecn':
+            #     splash_url += '&' + urlencode({'lua_source': SPLASH_LUA_SOURCE_LEETCODECN})
 
-        r = await session.get(splash_url)
+            r = await session.get(splash_url)
 
-        if r.status_code == 200:
-            return True, r.html
+            if r.status_code == 200:
+                return True, r.html
+        except:
+            pass
 
         return False, None
 
