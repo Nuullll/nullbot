@@ -72,6 +72,11 @@ def cst_dt_to_utc_ts(cst_dt):
     return utc_dt_to_ts(utc_dt)
 
 
+def long_long_ago():
+    ago = datetime.today()
+    return ago.replace(year=2000, tzinfo=CST)
+
+
 def last_sunday(hour=18, minute=0):
     today = datetime.today()
     wd = today.weekday()

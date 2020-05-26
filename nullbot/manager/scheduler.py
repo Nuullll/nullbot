@@ -1,22 +1,23 @@
 import nonebot as nb
-from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT
+from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT, AUTO_UPDATE_MAX_RETRIES
 from spideroj.mongo import DataManager
 from datetime import datetime
 from nonebot.command import call_command
 import pytz
 
 
-async def debug(self, msg):
+async def debug(msg):
     bot = nb.get_bot()
 
     await bot.send_private_msg(user_id=724463877, message=msg)
 
 
-@nb.scheduler.scheduled_job('cron', hour='18')
+@nb.scheduler.scheduled_job('cron', hour='22', minute='16')
 async def daily_update():
     bot = nb.get_bot()
 
     for group_id in AUTO_UPDATES:
+        await debug(f"Updating for group: {group_id}")
         dm = DataManager(group_id)
 
         members = await bot.get_group_member_list(group_id=group_id)
@@ -24,11 +25,28 @@ async def daily_update():
 
         fails = await dm.get_and_save_all_user_summary()
 
-        await self.debug(f"Group [{group_id}] update failures: {fails}")
+        await debug(f"Group [{group_id}] update failures: {fails}")
+
+        retry = 0
+        while fails:
+            fails = []
+            for qq_id, user_id, platform in fails:
+                ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+
+                if not ok:
+                    fails.append((qq_id, user_id, platform))
+            
+            retry += 1
+            if retry >= AUTO_UPDATE_MAX_RETRIES:
+                await debug(f"Failures after {AUTO_UPDATE_MAX_RETRIES} retries: {fails}")
+                break
     
-    for group_id in AUTO_DAILY_REPORT:
+    for group_id, mode in AUTO_DAILY_REPORT.items():
         ctx = {'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
-        await call_command(bot, ctx, 'report')
+        if mode == 'week_delta':
+            await call_command(bot, ctx, 'report')
+        else:
+            await call_command(bot, ctx, 'report_total')
 
 # @nb.scheduler.scheduled_job('cron', hour='12')
 # async def report_hns():

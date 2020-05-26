@@ -1,12 +1,13 @@
 import nonebot
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
+from nullbot.config import REPORT_TOTAL_MAX_ENTRIES
 from nullbot.utils.helpers import parse_cq_at
 from spideroj.config import PLATFORM_URLS, USER_UPDATE_COOLDOWN
 from spideroj.mongo import DataManager
 import re
 from random import shuffle
-from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign, cstnow
+from nullbot.utils.helpers import multiline_msg_generator, last_sunday, autoalign, cstnow, long_long_ago
 from datetime import datetime
 from operator import itemgetter
 from nonebot.command import call_command
@@ -309,6 +310,34 @@ async def report(session: CommandSession):
     await session.send(header)
 
     for msg in multiline_msg_generator(lines, lineno=True):
+        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+
+@on_command('report_total', permission=GROUP_ADMIN)
+async def report_total(session: CommandSession):
+    group_id = session.ctx['group_id']
+    group_info = await session.bot.get_group_info(group_id=group_id)
+    group_name = group_info['group_name']
+    member_count = group_info['member_count']
+
+    dm = DataManager(group_id)
+
+    starttime = long_long_ago()
+    endtime = cstnow()
+
+    data = dm.report(starttime, endtime)
+    data = [[alias, ac_now] for alias, _, ac_now in data if ac_now > 0]
+
+    data.sort(reverse=True, key=itemgetter(1))
+
+    lines = autoalign(data, formatter=lambda x: "| {} | {:<5} |".format(*x))
+
+    entries = min(member_count, REPORT_TOTAL_MAX_ENTRIES, len(data))
+    header = f"{group_name} Top {entries} / {member_count}\n"
+    header += "｜ Name ｜ Accepted ｜"
+    await session.send(header)
+
+    for msg in multiline_msg_generator(lines[:entries], lineno=True):
         await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
 

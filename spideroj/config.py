@@ -31,4 +31,4 @@ function main(splash, args)
 end
 '''
 
-USER_UPDATE_COOLDOWN = 7200
+USER_UPDATE_COOLDOWN = 600
