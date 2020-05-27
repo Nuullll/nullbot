@@ -1,4 +1,4 @@
-from nonebot.natural_language import on_natural_language, NLPSession
+from nonebot import on_natural_language, NLPSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.config import MONITOR_RECENT_MESSAGES, REPEAT_THRESHOLD
 from collections import defaultdict
