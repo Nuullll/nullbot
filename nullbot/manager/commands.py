@@ -1,7 +1,7 @@
 import nonebot
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
-from nullbot.config import REPORT_TOTAL_MAX_ENTRIES
+from nullbot.config import REPORT_TOTAL_MAX_ENTRIES, SUPERUSERS
 from nullbot.utils.helpers import parse_cq_at
 from spideroj.config import PLATFORM_URLS, USER_UPDATE_COOLDOWN
 from spideroj.mongo import DataManager
@@ -77,11 +77,15 @@ unregister leetcodecn nuullll
     if not argv:
         await session.finish(USAGE)
         return
+    
 
     rm_all = True if '-a' in argv else False
 
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
+
+    if '-u' in argv and qq_id in SUPERUSERS:
+        qq_id = parse_cq_at(argv[-1])
 
     dm = DataManager(group_id)
     if rm_all:
@@ -108,7 +112,7 @@ unregister leetcodecn nuullll
     await session.finish("解绑成功。")
 
 
-@on_command('accounts', aliases='account', only_to_me=False, permission=GROUP)
+@on_command('accounts', aliases='account', only_to_me=False, shell_like=True, permission=GROUP)
 async def handle_accounts(session: CommandSession):
     """accounts: 查询当前已绑定账号
 
@@ -118,6 +122,12 @@ accounts
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
 
+    argv = session.args['argv']
+    at_someone = None
+    if argv and '-u' in argv and qq_id in SUPERUSERS:
+        at_someone = argv[-1]
+        qq_id = parse_cq_at(at_someone)
+
     dm = DataManager(group_id)
     accounts = dm.query_binded_accounts(qq_id)
 
@@ -126,7 +136,10 @@ accounts
     else:
         msg = '并没有绑定账号。'
     
-    await session.send(msg, at_sender=True)
+    if at_someone:
+        await session.send(f"{at_someone} {msg}")
+    else:
+        await session.send(msg, at_sender=True)
 
 
 @on_command('register_for', only_to_me=False, shell_like=True, permission=SUPERUSER)
@@ -297,7 +310,7 @@ update
         delta = int((now - latest).total_seconds())
         print(latest, now, delta)
 
-        await session.send(f"最近更新: {latest}")
+        await session.send(f"上次更新: {latest}")
         if delta < USER_UPDATE_COOLDOWN:
             await session.finish(f"技能冷却中：剩余{USER_UPDATE_COOLDOWN-delta}秒")
         
