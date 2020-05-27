@@ -103,3 +103,21 @@ help progress
     except:
         await session.finish(f"命令{cmd}不存在或文档未定义！@Nuulll 甩锅")
     
+
+@on_command('repo', permission=GROUP)
+async def send_repo_info(session: CommandSession):
+    """repo: 查看闹闹机器人开源仓库
+
+用法:
+repo
+"""
+    lines = [get_random_header()]
+
+    lines += [
+        'GITHUB: https://github.com/Nuullll/nullbot',
+        '欢迎大家follow, star, watch三连'
+    ]
+
+    for msg in multiline_msg_generator(lines=lines, lineno=False):
+        await session.send(msg)
+    
