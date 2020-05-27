@@ -42,20 +42,33 @@ async def handle_reset_db(session: CommandSession):
 
 @on_command('register', only_to_me=False, permission=GROUP)
 async def handle_register(session: CommandSession):
+    """register: 绑定OJ账号
+
+用法:
+register <your OJ profile url>
+
+目前支持的OJ平台:
+%s
+
+示例:
+register https://leetcode.com/nuullll
+"""
     await register_helper(session)
 
 
-@on_command('deregister', aliases=('unregister',), only_to_me=False, shell_like=True, permission=GROUP)
-async def handle_deregister(session: CommandSession):
-    USAGE = """用法： 
-deregister [-a] [platform] [user_id]
+@on_command('unregister', aliases=('deregister',), only_to_me=False, shell_like=True, permission=GROUP)
+async def handle_unregister(session: CommandSession):
+    """unregister: 解绑账号
 
-可选参数：
+用法: 
+unregister [-a] [platform] [user_id]
+
+可选参数:
 -a 解绑本人所有OJ平台账号
 
-示例：
-deregister -a
-deregister leetcodecn nuullll
+示例:
+unregister -a
+unregister leetcodecn nuullll
 """
     # args
     argv = session.args['argv']
@@ -93,8 +106,13 @@ deregister leetcodecn nuullll
     await session.finish("解绑成功。")
 
 
-@on_command('accounts', only_to_me=False, permission=GROUP)
+@on_command('accounts', aliases='account', only_to_me=False, permission=GROUP)
 async def handle_accounts(session: CommandSession):
+    """accounts: 查询当前已绑定账号
+
+用法:
+accounts
+"""
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
 
@@ -120,13 +138,13 @@ async def register_helper(session, for_other=False):
     shuffle(examples)
 
     USAGE = """
-用法： 
+用法:
 register <your OJ profile url>
 
-目前支持的OJ平台：
+目前支持的OJ平台:
 """ + "\n".join(examples) + """
 
-示例：
+示例:
 register https://leetcode.com/nuullll
 """
 
@@ -225,6 +243,11 @@ async def query_registered(session: CommandSession):
 
 @on_command('progress', only_to_me=False, permission=GROUP)
 async def show_progress(session: CommandSession):
+    """progress: 查询本周刷题进度（周日18点为界线）
+
+用法:
+progress
+"""
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
 
@@ -248,6 +271,12 @@ async def show_progress(session: CommandSession):
 
 @on_command('update', only_to_me=False, permission=GROUP)
 async def update_database(session: CommandSession):
+    """update: 立刻更新账号数据（冷却时间10分钟）
+除此之外，爬虫会在每日18点左右自动更新账号数据（如有bug请 @Nuullll）
+
+用法:
+update
+"""
     group_id = session.ctx['group_id']
     qq_id = session.ctx['user_id']
     debug = session.ctx.get('debug', False)
@@ -334,7 +363,7 @@ async def report_total(session: CommandSession):
 
     entries = min(member_count, REPORT_TOTAL_MAX_ENTRIES, len(data))
     header = f"{group_name} Top {entries} / {member_count}\n"
-    header += "｜ Name ｜ Accepted ｜"
+    header += "# ｜ Name ｜ Accepted ｜"
     await session.send(header)
 
     for msg in multiline_msg_generator(lines[:entries], lineno=True):

@@ -1,8 +1,11 @@
-from nullbot.config import MAX_MESSAGE_LEN
+from nullbot.config import MAX_MESSAGE_LEN, RANDOM_HEADER
 from nonebot import CommandSession
+from nonebot.plugin import PluginManager
 import re
 from datetime import datetime, timezone, timedelta
 import pytz
+import random
+
 
 CST = pytz.timezone("Asia/Shanghai")
 
@@ -96,17 +99,32 @@ def print_width(s):
 
 
 def autoalign(lines, formatter=lambda line: repr(line), align_key=0):
-    max_width = 0
+    # max_width = 0
 
-    for line in lines:
-        max_width = max(max_width, print_width(line[align_key]))
+    # for line in lines:
+    #     max_width = max(max_width, print_width(line[align_key]))
     
     result = []
 
     for line in lines:
-        width = print_width(line[align_key])
-        line[align_key] += ' ' * (max_width - width)
+        # width = print_width(line[align_key])
+        # line[align_key] += ' ' * (max_width - width)
 
         result.append(formatter(line))
     
     return result
+
+
+def get_all_commands():
+    plugins = PluginManager._plugins
+
+    commands = {}
+    for plugin in plugins.values():
+        for cmd in plugin.commands:
+            commands[cmd.name[0]] = cmd
+
+    return commands
+
+
+def get_random_header():
+    return random.choice(RANDOM_HEADER)

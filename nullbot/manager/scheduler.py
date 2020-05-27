@@ -12,7 +12,7 @@ async def debug(msg):
     await bot.send_private_msg(user_id=724463877, message=msg)
 
 
-@nb.scheduler.scheduled_job('cron', hour='23')
+@nb.scheduler.scheduled_job('cron', hour='18')
 async def daily_update():
     bot = nb.get_bot()
 

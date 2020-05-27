@@ -1,6 +1,8 @@
 from nonebot import on_command, CommandSession, get_bot
-from nullbot.utils.helpers import multiline_msg_generator
+from nullbot.utils.helpers import multiline_msg_generator, get_all_commands, get_random_header
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
+from spideroj.config import PLATFORM_URLS
+import random
 
 
 @on_command('ls', only_to_me=False, shell_like=True, permission=GROUP_ADMIN)
@@ -47,3 +49,48 @@ async def publish_notice(session: CommandSession):
         group_id = g['group_id']
 
         await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+
+@on_command('help', aliases='man', only_to_me=False, permission=GROUP, shell_like=True)
+async def help(session: CommandSession):
+    group_id = session.ctx['group_id']
+
+    argv = session.args['argv']
+
+    commands = get_all_commands()
+    lines = [get_random_header()]
+    try:
+        if not argv or argv[0] == "help":
+            # global help
+            at_str = "@闹闹 "
+            for name, cmd in commands.items():
+                if cmd.permission == GROUP:
+                    docstr = cmd.func.__doc__
+                    brief = docstr.split('\n')[0] if docstr else name
+
+                    line = at_str if cmd.only_to_me else ""
+                    line += brief
+                    lines.append(line)
+            
+            for msg in multiline_msg_generator(lines=lines, lineno=True):
+                await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+            return
+
+        cmd = argv[0]
+        usage = commands[cmd].func.__doc__
+        
+        if cmd == "register":
+            # render docstring dynamically
+            examples = [f"{oj}: {url.format('<id>')}" for oj, url in PLATFORM_URLS.items()]
+            random.shuffle(examples)
+
+            usage %= "\n".join(examples)
+
+        lines += usage.split('\n')
+        for msg in multiline_msg_generator(lines=lines, lineno=False):
+            await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+
+    except:
+        await session.finish(f"命令{cmd}不存在或文档未定义！@Nuulll 甩锅")
+    
