@@ -90,7 +90,7 @@ RANDOM_HEADER = [
     "Lefatše Lumela! (Sesotho)",
     "හෙලෝ වර්ල්ඩ්! (Sinhala)",
     "Pozdravljen svet! (Slovenian)",
-    "¡Hola Mundo!         // Leading '¡' optional (Spanish)",
+    "¡Hola Mundo! (Spanish)",
     "Halo Dunya! (Sundanese)",
     "Salamu Dunia! (Swahili)",
     "Hej världen! (Swedish)",

@@ -53,6 +53,15 @@ async def publish_notice(session: CommandSession):
 
 @on_command('help', aliases='man', only_to_me=False, permission=GROUP, shell_like=True)
 async def help(session: CommandSession):
+    """help: 帮助
+
+用法:
+help [cmd]
+
+示例:
+help
+help progress
+"""
     group_id = session.ctx['group_id']
 
     argv = session.args['argv']
@@ -60,7 +69,7 @@ async def help(session: CommandSession):
     commands = get_all_commands()
     lines = [get_random_header()]
     try:
-        if not argv or argv[0] == "help":
+        if not argv:
             # global help
             at_str = "@闹闹 "
             for name, cmd in commands.items():
@@ -72,7 +81,7 @@ async def help(session: CommandSession):
                     line += brief
                     lines.append(line)
             
-            for msg in multiline_msg_generator(lines=lines, lineno=True):
+            for msg in multiline_msg_generator(lines=lines, lineno=False):
                 await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
             return
