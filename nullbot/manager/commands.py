@@ -70,6 +70,8 @@ unregister [-a] [platform] [user_id]
 unregister -a
 unregister leetcodecn nuullll
 """
+    USAGE = handle_unregister.__doc__
+
     # args
     argv = session.args['argv']
     if not argv:

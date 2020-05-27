@@ -20,11 +20,35 @@ class DataManager(object):
         self.group_id = str(group_id)
         self.members = _member_db[self.group_id]
     
-    @staticmethod
-    async def get_profile(platform, user_id):
+    async def get_profile(self, platform, user_id):
         spider = Spider.get_spider(platform)
+        
         ok, data = await spider.get_user_data(user_id)
         
+        # codeforeces, etc, ...
+        if spider.spider_type == 'submission':
+            # get lastest snapshot first
+            binded, qq_id = self.is_account_binded(user_id, platform)
+
+            submissions = []
+            accepted_problem_ids = set()
+            if binded:
+                snapshot = self.load_latest_snapshot(qq_id, user_id, platform)
+                submissions = snapshot.data.get("submissions", [])
+                accepted_problem_ids = set(snapshot.data.get("accepted_problem_ids", []))
+
+            last_submission_id = -1
+            if submissions:
+                last_submission_id = submissions[0].get("id", -1)
+            
+            success, sub_data = await spider.get_new_submissions(user_id, last_submission_id)
+            if success:
+                accepted_problem_ids.update(sub_data["accepted_problem_ids"])
+            
+            data["submissions"] = sub_data["submissions"]
+            data["accepted_problem_ids"] = list(accepted_problem_ids)
+            data["Solved Question"] = len(accepted_problem_ids)
+
         return ok, data
     
     @staticmethod

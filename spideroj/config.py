@@ -9,6 +9,7 @@ PLATFORM_URLS = {
     'lintcode': r'https://www.lintcode.com/user/{}',
     'hdu': r'http://acm.hdu.edu.cn/userstatus.php?user={}',
     'vjudge': r'https://vjudge.net/user/{}',
+    'codeforces': r'http://codeforces.com/profile/{}'
 }
 
 CRAWL_URLS = {

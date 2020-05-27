@@ -31,12 +31,11 @@ class Spider(object):
 
         for field in cls.fields:
             if field.xpath_selector:
-                raw = context.xpath(field.xpath_selector)
-
                 try:
+                    raw = context.xpath(field.xpath_selector)
                     cleaned = field.cleaner(raw[0])
                     data[field.name] = cleaned
-                except IndexError as e:
+                except Exception as e:
                     print("WARNING: Failed to retrieve Field [{}] ({})".format(field.name, e))
             else:
                 obj = json.loads(context.text)
@@ -44,7 +43,7 @@ class Spider(object):
                 try:
                     cleaned = field.json_parser(obj)
                     data[field.name] = cleaned
-                except KeyError as e:
+                except Exception as e:
                     print("WARNING: Failed to retrieve Field [{}] ({})".format(field.name, e))
 
         return data
@@ -103,3 +102,6 @@ class Spider(object):
             return False, {}
 
         return True, data
+
+    async def get_new_submissions(self, username, last_submission_id=-1):
+        raise NotImplementedError(f"get_new_submissions not implemented for {self.__class__}")
