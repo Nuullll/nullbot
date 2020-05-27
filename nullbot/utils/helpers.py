@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timezone, timedelta
 import pytz
 import random
+from aiocqhttp import Event as CQEvent
 
 
 CST = pytz.timezone("Asia/Shanghai")
@@ -128,3 +129,9 @@ def get_all_commands():
 
 def get_random_header():
     return random.choice(RANDOM_HEADER)
+
+def get_fake_cqevent(**kwargs):
+    ctx = {'anonymous': None, 'font': 1623440, 'group_id': 1048606265, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+    ctx.update(kwargs)
+
+    return CQEvent(**ctx)
