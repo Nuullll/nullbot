@@ -63,7 +63,7 @@ blog remove -a  // 解绑本人所有博客
             
             dm.bind_blog(qq_id, url)
             await session.send("绑定成功！")
-            
+
         elif op == "remove":
             remove_all = url == "-a"
             valid = is_valid_url(url)
@@ -89,12 +89,19 @@ blog remove -a  // 解绑本人所有博客
     except:
         pass
 
+    members = await session.bot.get_group_member_list(group_id=group_id)
+    # build qq_id -> card dict
+    card_dict = {member['user_id']: (member['card'] if member['card'] else member['nickname']) for member in members}
+
     # query all
     lines = [get_random_header()]
     url_map = dm.query_blog()
     for qq_id, blog_urls in url_map.items():
         for url in blog_urls:
-            line = f"{render_cq_at(qq_id)} {url}"
+            if qq_id not in card_dict:
+                line = f"{render_cq_at(qq_id)} {url}"
+            else:
+                line = f"{card_dict[qq_id]} {url}"
             lines.append(line)
     
     for msg in multiline_msg_generator(lines=lines, lineno=False):
