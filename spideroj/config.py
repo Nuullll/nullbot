@@ -1,6 +1,7 @@
 MEMBER_DB = 'oj'
 OJID_DB = 'ids'
 SNAPSHOT_DB = 'snapshots'
+BLOG_DB = 'blogs'
 
 PLATFORM_URLS = {
     'leetcode': r'https://leetcode.com/{}',

@@ -2,7 +2,7 @@ import nonebot
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.config import REPORT_TOTAL_MAX_ENTRIES, SUPERUSERS
-from nullbot.utils.helpers import parse_cq_at
+from nullbot.utils.helpers import parse_cq_at, is_valid_url, get_random_header, render_cq_at
 from spideroj.config import PLATFORM_URLS, USER_UPDATE_COOLDOWN
 from spideroj.mongo import DataManager
 import re
@@ -30,6 +30,75 @@ async def handle_init_db(session: CommandSession):
     success = dm.init(members, cleanup)
 
     await session.send('成功导入{}位成员信息'.format(success))
+
+
+@on_command('blog', only_to_me=False, shell_like=True, permission=GROUP)
+async def handle_blog(session: CommandSession):
+    """blog: 查询本群公开博客列表/绑定博客/解绑博客
+
+用法:
+blog    // 查询博客列表
+blog add <your blog url>
+blog remove <your blog url> [-a]
+
+示例:
+blog add https://blog.nuullll.com
+blog remove https://blog.nuullll.com
+blog remove -a  // 解绑本人所有博客
+"""
+    argv = session.args['argv']
+
+    group_id = session.event.group_id
+    qq_id = session.event.user_id
+    dm = DataManager(group_id)
+
+    try:
+        op = argv[0].lower()
+        url = argv[1]
+        
+        if op == "add":
+            if not is_valid_url(url):
+                await session.send("闹闹无法获取博客内容，请检查url或网站可达性，或稍后再试")
+                return
+            
+            dm.bind_blog(qq_id, url)
+            await session.send("绑定成功！")
+            
+        elif op == "remove":
+            remove_all = url == "-a"
+            valid = is_valid_url(url)
+            if not valid and not remove_all:
+                await session.send("闹闹无法获取博客内容，请检查url或网站可达性，或稍后再试")
+                return
+
+            if valid:
+                if not dm.unbind_blog(qq_id, url):
+                    await session.send("该博客未绑定，请检查url")
+                    return
+
+            if remove_all:
+                url_map = dm.query_blog(qq_id=qq_id)
+                for url in url_map[qq_id]:
+                    dm.unbind_blog(qq_id, url)
+                
+            await session.send("解绑成功！")
+        else:
+            raise ValueError("Usage error.")
+
+        return
+    except:
+        pass
+
+    # query all
+    lines = [get_random_header()]
+    url_map = dm.query_blog()
+    for qq_id, blog_urls in url_map.items():
+        for url in blog_urls:
+            line = f"{render_cq_at(qq_id)} {url}"
+            lines.append(line)
+    
+    for msg in multiline_msg_generator(lines=lines, lineno=False):
+        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
 
 @on_command('reset_db', permission=SUPERUSER)

@@ -1,10 +1,11 @@
 import pymongo
 from pymongo.errors import DuplicateKeyError
-from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB
+from spideroj.config import MEMBER_DB, OJID_DB, SNAPSHOT_DB, BLOG_DB
 from spideroj.crawler.spiders import Spider
 from datetime import timezone, datetime
 from spideroj.crawler.model import Snapshot
 from nullbot.utils.helpers import cst_dt_to_utc_ts, utc_ts_to_cst_dt
+from collections import defaultdict
 
 
 _client = pymongo.MongoClient()
@@ -12,6 +13,7 @@ _member_db = _client[MEMBER_DB]
 _ids = _client[OJID_DB]['all']
 _ids.create_index([('platform', pymongo.ASCENDING), ('user_id', pymongo.ASCENDING)], unique=True, background=True)
 _snapshot_db = _client[SNAPSHOT_DB]
+_blog_db = _client[BLOG_DB]['all']
 
 
 class DataManager(object):
@@ -163,6 +165,35 @@ class DataManager(object):
 
     def remove_account(self, qq_id, user_id, platform):
         self.unbind_account(qq_id, user_id, platform)
+
+    def bind_blog(self, qq_id, blog_url):
+        res = _blog_db.insert_one({
+            'qq_id': qq_id,
+            'blog_url': blog_url
+        })
+
+        return True
+    
+    def unbind_blog(self, qq_id, blog_url):
+        res = _blog_db.delete_one({
+            'qq_id': qq_id,
+            'blog_url': blog_url
+        })
+
+        return res.deleted_count == 1
+    
+    def query_blog(self, qq_id=None):
+        query = {}
+        if qq_id is not None:
+            query = {'qq_id': qq_id}
+
+        docs = _blog_db.find(query)
+
+        res = defaultdict(list)
+        for doc in docs:
+            res[doc['qq_id']].append(doc['blog_url'])
+        
+        return res
 
     async def get_and_save_user_summary(self, qq_id, user_id, platform):
         ok, fields = await self.get_profile(platform, user_id)
