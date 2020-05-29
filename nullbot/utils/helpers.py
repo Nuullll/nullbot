@@ -147,7 +147,7 @@ def is_valid_url(url):
     session = HTMLSession()
 
     try:
-        r = session.get(url)
+        r = session.get(url, timeout=10)
         return r.status_code == 200
     except:
         return False

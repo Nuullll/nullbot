@@ -94,7 +94,7 @@ blog remove -a  // 解绑本人所有博客
     card_dict = {member['user_id']: (member['card'] if member['card'] else member['nickname']) for member in members}
 
     # query all
-    lines = [get_random_header()]
+    lines = []
     url_map = dm.query_blog()
     for qq_id, blog_urls in url_map.items():
         for url in blog_urls:
@@ -104,6 +104,8 @@ blog remove -a  // 解绑本人所有博客
                 line = f"{card_dict[qq_id]} {url}"
             lines.append(line)
     
+    shuffle(lines)
+    lines = [get_random_header()] + lines
     for msg in multiline_msg_generator(lines=lines, lineno=False):
         await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
 
