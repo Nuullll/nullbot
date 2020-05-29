@@ -45,9 +45,11 @@ async def repeat_bullshit(session: NLPSession):
 @on_natural_language(permission=GROUP)
 async def reply_cue_me(session: NLPSession):
     global TURINGBOT_API_INVOKED
+    print(TURINGBOT_API_INVOKED)
 
-    if TURINGBOT_API_INVOKED >= 300:
-        await session.finish(get_random_header() + "\n今天聊够了，下班。")
+    if TURINGBOT_API_INVOKED >= 500:
+        await session.send(get_random_header() + "\n今天聊够了，下班。")
+        return 
 
     text = session.msg_text
     qq_id = session.event.user_id
@@ -64,8 +66,9 @@ async def reply_cue_me(session: NLPSession):
 @on_natural_language(only_to_me=False, permission=GROUP)
 async def random_bullshit(session: NLPSession):
     global TURINGBOT_API_INVOKED
+    print(TURINGBOT_API_INVOKED)
 
-    if TURINGBOT_API_INVOKED >= 300:
+    if TURINGBOT_API_INVOKED >= 500:
         return
 
     now = datetime.now()
@@ -89,6 +92,7 @@ async def random_bullshit(session: NLPSession):
 
 
 async def request_turing_api(message, user_id=0, group_id=0, user_nickname=''):
+    global TURINGBOT_API_INVOKED
 
     payload = {
         'reqType': 0,
@@ -114,6 +118,10 @@ async def request_turing_api(message, user_id=0, group_id=0, user_nickname=''):
 
                     data = json.loads(await res.text())
                     print(data)
+
+                    if data['intent']['code'] == 4003:
+                        TURINGBOT_API_INVOKED = 500
+                        return ""
 
                     for result in data['results']:
                         reply += "\n".join(result["values"].values())
