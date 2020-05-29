@@ -50,7 +50,7 @@ async def daily_update():
             await call_command(bot, event, 'report_total')
 
 
-@nb.scheduler.scheduled_job('cron', hour='12')
+@nb.scheduler.scheduled_job('cron', hour='8')
 async def get_latest_blogs():
     bot = nb.get_bot()
     # members = await session.bot.get_group_member_list(group_id=group_id)
@@ -80,7 +80,7 @@ async def get_latest_blogs():
     if not recent_updated:
         return
 
-    lines = ["以下博客近2天内有更新，大家快去学习吧"]
+    lines = [f"{render_cq_at('all')} 以下博客近2天内有更新，大家快去学习吧"]
     for qq_id, url, dt_str in recent_updated:
         line = f"{render_cq_at(qq_id)} {url} {dt_str}"
         lines.append(line)

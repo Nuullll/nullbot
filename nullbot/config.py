@@ -1,4 +1,7 @@
 from nonebot.default_config import *
+import os
+
+NICKNAME = {'闹闹', '闹闹机器人', '机器人'}
 
 SUPERUSERS = {
     724463877
@@ -34,6 +37,9 @@ AUTO_BLOG_PUSHES = {
 AUTO_UPDATE_MAX_RETRIES = 5
 
 REPORT_TOTAL_MAX_ENTRIES = 50
+
+TURINGBOT_API_URL = "http://openapi.tuling123.com/openapi/api/v2"
+TURINGBOT_API_KEY = os.getenv("TURINGBOT_API_KEY")
 
 RANDOM_HEADER = [
     "--- Hello Wêreld! (Afrikaans) ---",
