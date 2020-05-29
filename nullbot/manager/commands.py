@@ -61,8 +61,10 @@ blog remove -a  // 解绑本人所有博客
                 await session.send("闹闹无法获取博客内容，请检查url或网站可达性，或稍后再试")
                 return
             
-            dm.bind_blog(qq_id, url)
-            await session.send("绑定成功！")
+            if dm.bind_blog(qq_id, url):
+                await session.send("绑定成功！")
+            else:
+                await session.send("该博客你已经绑定过啦！")
 
         elif op == "remove":
             remove_all = url == "-a"
@@ -91,17 +93,19 @@ blog remove -a  // 解绑本人所有博客
 
     members = await session.bot.get_group_member_list(group_id=group_id)
     # build qq_id -> card dict
-    card_dict = {member['user_id']: (member['card'] if member['card'] else member['nickname']) for member in members}
+    name_dict = {member['user_id']: (member['card'], member['nickname']) for member in members}
 
     # query all
     lines = []
     url_map = dm.query_blog()
     for qq_id, blog_urls in url_map.items():
         for url in blog_urls:
-            if qq_id not in card_dict:
+            if qq_id not in name_dict:
                 line = f"{render_cq_at(qq_id)} {url}"
             else:
-                line = f"{card_dict[qq_id]} {url}"
+                card, nickname = name_dict[qq_id]
+                card = f"({card})" if card else ""
+                line = f"{nickname}{card} {url}"
             lines.append(line)
     
     shuffle(lines)

@@ -168,13 +168,17 @@ class DataManager(object):
 
     @staticmethod
     def bind_blog(qq_id, blog_url):
-        res = _blog_db.insert_one({
+        query = {
             'qq_id': qq_id,
             'blog_url': blog_url
-        })
+        }
 
+        if _blog_db.find_one(query):
+            return False
+
+        res = _blog_db.insert_one(query)
         return True
-    
+        
     @staticmethod
     def unbind_blog(qq_id, blog_url):
         res = _blog_db.delete_one({
