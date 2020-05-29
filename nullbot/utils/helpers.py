@@ -7,6 +7,11 @@ import pytz
 import random
 from aiocqhttp import Event as CQEvent
 from requests_html import HTMLSession
+import dateparser
+from dateparser.search import search_dates
+from dateparser_data.settings import default_parsers
+_date_parsers = [parser for parser in default_parsers if parser != 'timestamp']
+from operator import itemgetter
 
 
 CST = pytz.timezone("Asia/Shanghai")
@@ -152,3 +157,43 @@ def is_valid_url(url):
     except:
         return False
         
+
+def guess_blog_update_time(blog_url):
+    print(blog_url)
+    session = HTMLSession()
+
+    def _find_latest(datetime_list):
+        now = datetime.now()
+        delta = float('inf')
+        latest = (None, None)
+        for string, dt in datetime_list:
+            days = (now - dt).days
+            if 1 <= days < delta and len(string) >= 2:
+                delta = days
+                latest = (string, dt)
+        
+        return latest
+
+    try:
+        r = session.get(blog_url, timeout=10)
+        if r.status_code == 200:
+            text = r.html.find("body", first=True).text
+            res = []
+            for line in text.split():
+                r = search_dates(line, languages=['en', 'zh'], settings={'PARSERS': _date_parsers, 'STRICT_PARSING': True})
+                if not r:
+                    r = dateparser.parse(line, languages=['en', 'zh'], settings={'PARSERS': _date_parsers, 'STRICT_PARSING': True})
+                    if r:
+                        res.append((line, r))
+                        continue
+                else:
+                    res.extend(r)
+
+            latest = _find_latest(res)
+            print(latest)
+
+            return latest
+    except:
+        pass
+
+    return None, None

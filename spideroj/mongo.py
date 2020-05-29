@@ -166,7 +166,8 @@ class DataManager(object):
     def remove_account(self, qq_id, user_id, platform):
         self.unbind_account(qq_id, user_id, platform)
 
-    def bind_blog(self, qq_id, blog_url):
+    @staticmethod
+    def bind_blog(qq_id, blog_url):
         res = _blog_db.insert_one({
             'qq_id': qq_id,
             'blog_url': blog_url
@@ -174,7 +175,8 @@ class DataManager(object):
 
         return True
     
-    def unbind_blog(self, qq_id, blog_url):
+    @staticmethod
+    def unbind_blog(qq_id, blog_url):
         res = _blog_db.delete_one({
             'qq_id': qq_id,
             'blog_url': blog_url
@@ -182,7 +184,8 @@ class DataManager(object):
 
         return res.deleted_count == 1
     
-    def query_blog(self, qq_id=None):
+    @staticmethod
+    def query_blog(qq_id=None):
         query = {}
         if qq_id is not None:
             query = {'qq_id': qq_id}

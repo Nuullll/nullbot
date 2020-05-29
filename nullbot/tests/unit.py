@@ -2,7 +2,7 @@ from nonebot import get_bot, on_command, on_request, on_notice, CommandSession, 
 from nonebot.permission import PRIVATE, SUPERUSER
 from nonebot.command import call_command
 from spideroj.mongo import DataManager
-from nullbot.utils.helpers import multiline_msg_generator, get_fake_cqevent
+from nullbot.utils.helpers import multiline_msg_generator, get_fake_cqevent, guess_blog_update_time
 import asyncio
 from spideroj.config import OJID_DB, MEMBER_DB, SNAPSHOT_DB
 import pymongo
@@ -101,3 +101,19 @@ async def change_field(session: CommandSession):
 async def test_call_command(session: CommandSession):
     event = get_fake_cqevent()
     await call_command(get_bot(), event, 'report')
+
+
+@on_command('test_blog', permission=SUPERUSER)
+async def test_blog_date_parser(session: CommandSession):
+    lines = []
+    url_map = DataManager.query_blog()
+    for qq_id, blog_urls in url_map.items():
+        for url in blog_urls:
+            if 'juejin' not in url:
+                continue
+            # if qq_id not in card_dict:
+            #     line = f"{render_cq_at(qq_id)} {url}"
+            # else:
+            #     line = f"{card_dict[qq_id]} {url}"
+            # lines.append(line)
+            guess_blog_update_time(url)

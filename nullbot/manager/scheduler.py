@@ -1,9 +1,9 @@
 import nonebot as nb
-from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT, AUTO_UPDATE_MAX_RETRIES
+from nullbot.config import AUTO_UPDATES, AUTO_DAILY_REPORT, AUTO_UPDATE_MAX_RETRIES, AUTO_BLOG_PUSHES
 from spideroj.mongo import DataManager
 from datetime import datetime
 from nonebot.command import call_command
-from nullbot.utils.helpers import get_fake_cqevent
+from nullbot.utils.helpers import get_fake_cqevent, guess_blog_update_time, multiline_msg_generator, render_cq_at
 import pytz
 
 
@@ -48,3 +48,43 @@ async def daily_update():
             await call_command(bot, event, 'report')
         else:
             await call_command(bot, event, 'report_total')
+
+
+@nb.scheduler.scheduled_job('cron', hour='12')
+async def get_latest_blogs():
+    bot = nb.get_bot()
+    # members = await session.bot.get_group_member_list(group_id=group_id)
+    # # build qq_id -> card dict
+    # card_dict = {member['user_id']: (member['card'] if member['card'] else member['nickname']) for member in members}
+
+    # query all
+    recent_updated = []
+    now = datetime.now()
+
+    url_map = DataManager.query_blog()
+    for qq_id, blog_urls in url_map.items():
+        for url in blog_urls:
+            # if qq_id not in card_dict:
+            #     line = f"{render_cq_at(qq_id)} {url}"
+            # else:
+            #     line = f"{card_dict[qq_id]} {url}"
+            # lines.append(line)
+            text, dt = guess_blog_update_time(url)
+
+            if text is None:
+                continue
+
+            if (now - dt).days <= 2:
+                recent_updated.append((qq_id, url, dt.strftime("%Y-%m-%d")))
+    
+    if not recent_updated:
+        return
+
+    lines = ["以下博客近2天内有更新，大家快去学习吧"]
+    for qq_id, url, dt_str in recent_updated:
+        line = f"{render_cq_at(qq_id)} {url} {dt_str}"
+        lines.append(line)
+    
+    for group_id in AUTO_BLOG_PUSHES:
+        for msg in multiline_msg_generator(lines=lines, lineno=False):
+            await bot.send_msg_rate_limited(group_id=group_id, message=msg)
