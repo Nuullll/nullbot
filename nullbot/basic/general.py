@@ -44,13 +44,18 @@ async def repeat_bullshit(session: NLPSession):
 
 @on_natural_language(permission=GROUP)
 async def reply_cue_me(session: NLPSession):
+    global TURINGBOT_API_INVOKED
 
-    if TURINGBOT_API_INVOKED >= 450:
+    if TURINGBOT_API_INVOKED >= 300:
         await session.finish(get_random_header() + "\n今天聊够了，下班。")
 
     text = session.msg_text
+    qq_id = session.event.user_id
+    group_id = session.event.group_id
+    card = session.event.sender.get('card', 'nobody')
 
-    reply = await request_turing_api(text)
+    TURINGBOT_API_INVOKED += 1
+    reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
 
     if reply:
         await session.send(reply)
@@ -58,22 +63,26 @@ async def reply_cue_me(session: NLPSession):
 
 @on_natural_language(only_to_me=False, permission=GROUP)
 async def random_bullshit(session: NLPSession):
+    global TURINGBOT_API_INVOKED
 
-    if TURINGBOT_API_INVOKED >= 450:
+    if TURINGBOT_API_INVOKED >= 300:
         return
 
     now = datetime.now()
     zero = now.replace(hour=0, minute=0, second=0)
     tomorrow = zero + timedelta(days=1)
+    seconds_wasted = (now - zero).total_seconds()
     seconds_to_waste = (tomorrow - now).total_seconds()
 
-    p = (500 - TURINGBOT_API_INVOKED) / seconds_to_waste
-    print(p)
-    if random.random() < p:
+    p1 = TURINGBOT_API_INVOKED / seconds_wasted
+    p2 = (500 - TURINGBOT_API_INVOKED) / seconds_to_waste
+    print(p1, p2)
+    if random.random() < (p1+p2)/2:
         # call api
+        TURINGBOT_API_INVOKED += 1
 
         text = session.msg_text
-        reply = await request_turing_api(text)
+        reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
 
         if reply:
             await session.send(reply)
@@ -100,13 +109,16 @@ async def request_turing_api(message, user_id=0, group_id=0, user_nickname=''):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(TURINGBOT_API_URL, json=payload) as res:
+                
                 if res.status == 200:
+
                     data = json.loads(await res.text())
                     print(data)
 
                     for result in data['results']:
                         reply += "\n".join(result["values"].values())
-    except:
+    except Exception as e:
+        print(e)
         return ""
 
     return reply
