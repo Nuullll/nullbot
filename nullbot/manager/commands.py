@@ -359,9 +359,14 @@ progress
 
     tf = "%Y/%m/%d %H:%M"
 
+    if ve >= vs:
+        delta_msg = f"+{ve-vs}"
+    else:
+        delta_msg = "session change"
+
     msg = f"""Progress this week:
 [{starttime.strftime(tf)}] Accepted: {vs}
-[{endtime.strftime(tf)}] Accepted: {ve} (+{ve-vs})"""
+[{endtime.strftime(tf)}] Accepted: {ve} ({delta_msg})"""
     
     await session.send(msg)
 

@@ -14,8 +14,6 @@ RECENT = defaultdict(list)
 FREQ = defaultdict(lambda: defaultdict(lambda:0))
 LAST_SENT = defaultdict(str)
 
-TURINGBOT_API_INVOKED = 0
-
 
 @on_natural_language(only_to_me=False, permission=GROUP)
 async def repeat_bullshit(session: NLPSession):
@@ -42,47 +40,35 @@ async def repeat_bullshit(session: NLPSession):
         print(f"RECENT: {RECENT}")
 
 
-@on_natural_language(permission=GROUP)
-async def reply_cue_me(session: NLPSession):
-    global TURINGBOT_API_INVOKED
-    print(TURINGBOT_API_INVOKED)
+# @on_natural_language(permission=GROUP)
+# async def reply_cue_me(session: NLPSession):
+#     global TURINGBOT_API_INVOKED
+#     print(TURINGBOT_API_INVOKED)
 
-    if TURINGBOT_API_INVOKED >= 500:
-        await session.send(get_random_header() + "\n今天聊够了，下班。")
-        return 
+#     if TURINGBOT_API_INVOKED >= 500:
+#         await session.send(get_random_header() + "\n今天聊够了，下班。")
+#         return 
 
-    text = session.msg_text
-    qq_id = session.event.user_id
-    group_id = session.event.group_id
-    card = session.event.sender.get('card', 'nobody')
+#     text = session.msg_text
+#     qq_id = session.event.user_id
+#     group_id = session.event.group_id
+#     card = session.event.sender.get('card', 'nobody')
 
-    TURINGBOT_API_INVOKED += 1
-    reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
+#     TURINGBOT_API_INVOKED += 1
+#     reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
 
-    if reply:
-        await session.send(reply)
+#     if reply:
+#         await session.send(reply)
 
 
 @on_natural_language(only_to_me=False, permission=GROUP)
 async def random_bullshit(session: NLPSession):
-    global TURINGBOT_API_INVOKED
-    print(TURINGBOT_API_INVOKED)
-
-    if TURINGBOT_API_INVOKED >= 500:
-        return
 
     now = datetime.now()
-    zero = now.replace(hour=0, minute=0, second=0)
-    tomorrow = zero + timedelta(days=1)
-    seconds_wasted = (now - zero).total_seconds()
-    seconds_to_waste = (tomorrow - now).total_seconds()
-
-    p1 = TURINGBOT_API_INVOKED / seconds_wasted
-    p2 = (500 - TURINGBOT_API_INVOKED) / seconds_to_waste
-    print(p1, p2)
-    if random.random() < (p1+p2)/2:
+    flag = random.randint(0, 59)
+    print(now.second, flag)
+    if now.second == flag:
         # call api
-        TURINGBOT_API_INVOKED += 1
 
         text = session.msg_text
         reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
