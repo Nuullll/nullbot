@@ -13,10 +13,17 @@ async def debug(msg):
     await bot.send_private_msg(user_id=724463877, message=msg)
 
 
+@nb.scheduler.scheduled_job('cron', minute='*')
+async def heartbeat():
+    bot = nb.get_bot()
+    await bot.get_status()
+
+
 @nb.scheduler.scheduled_job('cron', hour='18')
 async def daily_update():
     bot = nb.get_bot()
 
+    checkpoint = set()
     for group_id in AUTO_UPDATES:
         await debug(f"Updating for group: {group_id}")
         dm = DataManager(group_id)
@@ -24,23 +31,30 @@ async def daily_update():
         members = await bot.get_group_member_list(group_id=group_id)
         dm.init(members)
 
-        fails = await dm.get_and_save_all_user_summary()
+        fails, successes = await dm.get_and_save_all_user_summary(checkpoint)
 
         await debug(f"Group [{group_id}] update failures: {fails}")
 
         retry = 0
+        _fails = fails[:]
         while fails:
             fails = []
-            for qq_id, user_id, platform in fails:
+            for qq_id, user_id, platform in _fails:
                 ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
 
                 if not ok:
                     fails.append((qq_id, user_id, platform))
+                else:
+                    successes.append((qq_id, user_id, platform))
             
             retry += 1
             if retry >= AUTO_UPDATE_MAX_RETRIES:
                 await debug(f"Failures after {AUTO_UPDATE_MAX_RETRIES} retries: {fails}")
                 break
+
+            _fails = fails[:]
+
+        checkpoint.update(successes)
     
     for group_id, mode in AUTO_DAILY_REPORT.items():
         event = get_fake_cqevent(group_id=group_id)

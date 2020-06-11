@@ -23,35 +23,40 @@ class DataManager(object):
         self.members = _member_db[self.group_id]
     
     async def get_profile(self, platform, user_id):
-        spider = Spider.get_spider(platform)
-        
-        ok, data = await spider.get_user_data(user_id)
-        
-        # codeforeces, etc, ...
-        if spider.spider_type == 'submission':
-            # get lastest snapshot first
-            binded, qq_id = self.is_account_binded(user_id, platform)
-
-            submissions = []
-            accepted_problem_ids = set()
-            if binded:
-                snapshot = self.load_latest_snapshot(qq_id, user_id, platform)
-                submissions = snapshot.data.get("submissions", [])
-                accepted_problem_ids = set(snapshot.data.get("accepted_problem_ids", []))
-
-            last_submission_id = -1
-            if submissions:
-                last_submission_id = submissions[0].get("id", -1)
+        try:
+            spider = Spider.get_spider(platform)
             
-            success, sub_data = await spider.get_new_submissions(user_id, last_submission_id)
-            if success:
-                accepted_problem_ids.update(sub_data["accepted_problem_ids"])
+            ok, data = await spider.get_user_data(user_id)
             
-            data["submissions"] = sub_data["submissions"]
-            data["accepted_problem_ids"] = list(accepted_problem_ids)
-            data["Solved Question"] = len(accepted_problem_ids)
+            # codeforeces, etc, ...
+            if spider.spider_type == 'submission':
+                # get lastest snapshot first
+                binded, qq_id = self.is_account_binded(user_id, platform)
 
-        return ok, data
+                submissions = []
+                accepted_problem_ids = set()
+                if binded:
+                    snapshot = self.load_latest_snapshot(qq_id, user_id, platform)
+                    submissions = snapshot.data.get("submissions", [])
+                    accepted_problem_ids = set(snapshot.data.get("accepted_problem_ids", []))
+
+                last_submission_id = -1
+                if submissions:
+                    last_submission_id = submissions[0].get("id", -1)
+                
+                success, sub_data = await spider.get_new_submissions(user_id, last_submission_id)
+                if success:
+                    accepted_problem_ids.update(sub_data["accepted_problem_ids"])
+                
+                data["submissions"] = sub_data["submissions"]
+                data["accepted_problem_ids"] = list(accepted_problem_ids)
+                data["Solved Question"] = len(accepted_problem_ids)
+
+            return ok, data
+
+        except Exception as e:
+            print(e)
+            return False, {}
     
     @staticmethod
     def utc_now():
@@ -254,24 +259,33 @@ class DataManager(object):
         
         return latest
     
-    async def get_and_save_all_user_summary(self):
+    async def get_and_save_all_user_summary(self, checkpoint=None):
+        if checkpoint is None:
+            checkpoint = set()
+
         qqs = []
         
         for doc in self.members.find({}):
             qqs.append(doc['qq_id'])
         
         fails = []
+        successes = []
         
         for qq_id in qqs:
             accounts = self.query_binded_accounts(qq_id)
 
             for user_id, platform in accounts:
+                if (qq_id, user_id, platform) in checkpoint:
+                    continue
+
                 ok, fields = await self.get_and_save_user_summary(qq_id, user_id, platform)
 
                 if not ok:
                     fails.append((qq_id, user_id, platform))
+                else:
+                    successes.append((qq_id, user_id, platform))
 
-        return fails
+        return fails, successes
 
     def load_snapshot_around(self, qq_id, user_id, platform, cst_datetime):
 

@@ -68,20 +68,15 @@ blog remove -a  // 解绑本人所有博客
 
         elif op == "remove":
             remove_all = url == "-a"
-            valid = is_valid_url(url)
-            if not valid and not remove_all:
-                await session.send("闹闹无法获取博客内容，请检查url或网站可达性，或稍后再试")
-                return
-
-            if valid:
-                if not dm.unbind_blog(qq_id, url):
-                    await session.send("该博客未绑定，请检查url")
-                    return
-
+            
             if remove_all:
                 url_map = dm.query_blog(qq_id=qq_id)
                 for url in url_map[qq_id]:
                     dm.unbind_blog(qq_id, url)
+            else:
+                if not dm.unbind_blog(qq_id, url):
+                    await session.send("该博客未绑定，请检查url")
+                    return
                 
             await session.send("解绑成功！")
         else:

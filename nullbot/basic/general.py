@@ -69,8 +69,14 @@ async def random_bullshit(session: NLPSession):
     print(now.second, flag)
     if now.second == flag:
         # call api
-
         text = session.msg_text
+        
+        if not text:
+            return
+
+        qq_id = session.event.user_id
+        group_id = session.event.group_id
+        card = session.event.sender.get('card', 'nobody')
         reply = await request_turing_api(text, user_id=qq_id, group_id=group_id, user_nickname=card)
 
         if reply:
