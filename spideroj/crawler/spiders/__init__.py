@@ -1,7 +1,7 @@
 from requests_html import AsyncHTMLSession
 import json
 import importlib
-from spideroj.config import PLATFORM_URLS, CRAWL_URLS, SPLASH_API_ROOT, SPLASH_QUERY, SPLASH_LUA_SOURCE_LEETCODECN
+from spideroj.config import PLATFORM_URLS, CRAWL_URLS, SPLASH_API_ROOT, SPLASH_QUERY, REMOTE_SPLASH_API_ROOT
 from urllib.parse import urlencode
 
 
@@ -9,15 +9,20 @@ class Spider(object):
     
     server_name = ''
     fields = []
+    use_oversea_remote_server = False
     js_support = False
     spider_type = 'summary'     # or 'submission'
 
     @staticmethod
-    async def get_page(url, js_support=False):
+    async def get_page(url, js_support=False, use_oversea_remote_server=False):
+        if use_oversea_remote_server:
+            return await Spider.render_html_with_remote_splash(url)
+
         if js_support:
             return await Spider.render_html_with_splash(url)
         
         session = AsyncHTMLSession()
+
         r = await session.get(url)
 
         if r.status_code == 200:
@@ -32,6 +37,7 @@ class Spider(object):
         for field in cls.fields:
             if field.xpath_selector:
                 try:
+                    print(context)
                     raw = context.xpath(field.xpath_selector)
                     cleaned = field.cleaner(raw[0])
                     data[field.name] = cleaned
@@ -80,6 +86,22 @@ class Spider(object):
 
         return False, None
 
+    @classmethod
+    async def render_html_with_remote_splash(cls, url):
+        try:
+            session = AsyncHTMLSession()
+            remote_splash_url = REMOTE_SPLASH_API_ROOT + SPLASH_QUERY.format(url)
+            print(remote_splash_url)
+
+            r = await session.get(remote_splash_url)
+
+            if r.status_code == 200:
+                return True, r.html
+        except:
+            pass
+
+        return False, None
+
     def __init__(self, server_url):
         self.server_url = server_url
 
@@ -89,7 +111,7 @@ class Spider(object):
     async def get_user_data(self, username):
         url = self.get_user_url(username)
 
-        ok, context = await self.get_page(url, self.js_support)
+        ok, context = await self.get_page(url, self.js_support, self.use_oversea_remote_server)
 
         if not ok:
             print("Failed to get profile page of [{}]".format(username))

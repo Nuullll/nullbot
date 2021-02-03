@@ -1,5 +1,5 @@
 from nonebot import on_command, CommandSession, get_bot
-from nullbot.utils.helpers import multiline_msg_generator, get_all_commands, get_random_header
+from nullbot.utils.helpers import *
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from spideroj.config import PLATFORM_URLS
 import random
@@ -7,6 +7,9 @@ import random
 
 @on_command('ls', only_to_me=False, shell_like=True, permission=GROUP_ADMIN)
 async def handle_ls(session: CommandSession):
+    if not is_superuser(session):
+        return
+        
     group_id = session.ctx['group_id']
     user_id = session.ctx['user_id']
 
@@ -27,7 +30,7 @@ async def handle_ls(session: CommandSession):
         await session.bot.send_msg(group_id=group_id, message=header)
 
         for msg in multiline_msg_generator(lines=lines, lineno=True):
-            await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+            await session.bot.send_msg(group_id=group_id, message=msg)
 
             if not ls_all:
                 await session.bot.send_msg(group_id=group_id, message="Try `ls -a` or `ls --all` for full message.")
@@ -38,6 +41,8 @@ async def handle_ls(session: CommandSession):
 
 @on_command('notice', permission=SUPERUSER)
 async def publish_notice(session: CommandSession):
+    if not is_superuser(session):
+        return
 
     if 'group_id' in session.ctx:
         return
@@ -48,7 +53,19 @@ async def publish_notice(session: CommandSession):
     for g in data:
         group_id = g['group_id']
 
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg(group_id=group_id, message=msg)
+
+
+@on_command('fake', permission=SUPERUSER)
+async def fake_reply(session: CommandSession):
+    if not is_superuser(session):
+        return
+
+    if 'group_id' in session.event:
+        return
+
+    msg = session.current_arg
+    await session.bot.send_msg(group_id=598880963, message=msg)
 
 
 @on_command('help', aliases='man', only_to_me=False, permission=GROUP, shell_like=True)
@@ -67,7 +84,7 @@ help progress
     argv = session.args['argv']
 
     commands = get_all_commands()
-    lines = [get_random_header()]
+    lines = []
     try:
         if not argv:
             # global help
@@ -81,8 +98,10 @@ help progress
                     line += brief
                     lines.append(line)
             
+            random.shuffle(lines)
+            lines = [get_random_header()] + lines
             for msg in multiline_msg_generator(lines=lines, lineno=False):
-                await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+                await session.send(msg)
 
             return
 
@@ -98,13 +117,14 @@ help progress
 
         lines += usage.split('\n')
         for msg in multiline_msg_generator(lines=lines, lineno=False):
-            await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+            await session.send(msg)
 
-    except:
+    except Exception as e:
+        print(e)
         await session.finish(f"命令{cmd}不存在或文档未定义！@Nuulll 甩锅")
     
 
-@on_command('repo', permission=GROUP)
+@on_command('repo', only_to_me=False, permission=GROUP)
 async def send_repo_info(session: CommandSession):
     """repo: 查看闹闹机器人开源仓库
 

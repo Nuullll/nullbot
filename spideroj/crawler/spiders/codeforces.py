@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 class CodeforcesSpider(Spider):
     server_name = 'codeforces'
     spider_type = 'submission'
+    use_oversea_remote_server = True
     submission_url = 'http://codeforces.com/submissions/{}/page/{}'
 
     fields = [
@@ -73,13 +74,11 @@ class CodeforcesSpider(Spider):
         }
 
         return True, data
-            
-
 
     async def parse_submission_page(self, username, page=1):
         url = self.submission_url.format(username, page)
 
-        ok, context = await self.get_page(url, self.js_support)
+        ok, context = await self.get_page(url, self.js_support, self.use_oversea_remote_server)
 
         if not ok:
             print("Failed to get submission page {} of [{}]".format(page, username))
@@ -99,7 +98,7 @@ class CodeforcesSpider(Spider):
                 continue
             
             timestamp = cells[1]
-            dt = datetime.strptime(timestamp.text, "%b/%d/%Y %H:%M")
+            dt = datetime.strptime(timestamp.text, "%b/%d/%Y %H:%MUTC")
             ts = dt.replace(tzinfo=timezone.utc).timestamp()
 
             problem = cells[3]

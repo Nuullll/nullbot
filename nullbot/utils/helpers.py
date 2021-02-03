@@ -1,4 +1,4 @@
-from nullbot.config import MAX_MESSAGE_LEN, RANDOM_HEADER
+from nullbot.config import MAX_MESSAGE_LEN, RANDOM_HEADER, SUPERUSERS
 from nonebot import CommandSession
 from nonebot.plugin import PluginManager
 import re
@@ -15,6 +15,22 @@ from operator import itemgetter
 
 
 CST = pytz.timezone("Asia/Shanghai")
+
+
+def is_superuser(session):
+    return session.event.user_id in SUPERUSERS
+
+
+def parse_cq_image(cq):
+    if not cq.startswith('[CQ:image,'):
+        return None
+
+    try:
+        items = cq.strip('[]').split(',')
+        _, file, url = items
+        return file, url
+    except Exception as e:
+        return None
 
 
 def multiline_msg_generator(lines=None, lineno=False, lineno_format='#{} ', max_msg_len=MAX_MESSAGE_LEN):
@@ -50,6 +66,10 @@ is_owner = lambda s: validate_role(s, ('owner', ))
 
 def parse_cq_at(cqcode):
     m = re.search(r'\[CQ:at,qq=(\d+)\]', cqcode)
+    if m:
+        return int(m.group(1))
+    
+    m = re.search(r'@(\d+)', cqcode)
     if m:
         return int(m.group(1))
     

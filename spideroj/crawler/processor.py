@@ -19,7 +19,7 @@ class Cleaner(object):
 
     @staticmethod
     def get_int(x: str) -> int:
-        return int(x.strip())
+        return int(x.strip().replace(',', '').replace(' ', ''))
 
     @staticmethod
     def get_fraction(x: str) -> List[int]:

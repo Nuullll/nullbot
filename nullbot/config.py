@@ -9,7 +9,7 @@ SUPERUSERS = {
 
 COMMAND_START = {'', '/', '!', '／', '！'}
 
-API_ROOT = 'http://172.18.0.1:5700'
+API_ROOT = 'http://0.0.0.0:5700'
 
 HOST = '0.0.0.0'
 PORT = 8099
@@ -38,6 +38,7 @@ AUTO_UPDATE_MAX_RETRIES = 5
 
 REPORT_TOTAL_MAX_ENTRIES = 50
 
+VERBOSE_VOLUME = 10
 TURINGBOT_API_URL = "http://openapi.tuling123.com/openapi/api/v2"
 TURINGBOT_API_KEY = os.getenv("TURINGBOT_API_KEY")
 

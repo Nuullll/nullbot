@@ -15,7 +15,12 @@ GROUP_ID_WEEKLY = 958127821
 
 async def tell_dad(msg):
     bot = get_bot()
-    await bot.send_private_msg_rate_limited(user_id=QQ_ID, message=msg)
+    await bot.send_private_msg(user_id=QQ_ID, message=msg)
+
+
+@on_command('test_image', permission=SUPERUSER)
+async def test_send_image(session: CommandSession):
+    await tell_dad('[CQ:image,file=04eabb07a9820685929ee328324f12ee.image,url=http://gchat.qpic.cn/gchatpic_new/982264944/598880963-2204793706-04EABB07A9820685929EE328324F12EE/0?term=2]')
 
 
 @on_command('test_send_private_msg', aliases=('私聊测试', ), permission=SUPERUSER)

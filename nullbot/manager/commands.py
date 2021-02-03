@@ -2,7 +2,7 @@ import nonebot
 from nonebot import on_command, CommandSession
 from nonebot.permission import GROUP, GROUP_ADMIN, SUPERUSER
 from nullbot.config import REPORT_TOTAL_MAX_ENTRIES, SUPERUSERS
-from nullbot.utils.helpers import parse_cq_at, is_valid_url, get_random_header, render_cq_at
+from nullbot.utils.helpers import *
 from spideroj.config import PLATFORM_URLS, USER_UPDATE_COOLDOWN
 from spideroj.mongo import DataManager
 import re
@@ -15,6 +15,9 @@ from nonebot.command import call_command
 
 @on_command('init_db', only_to_me=False, shell_like=True, permission=SUPERUSER)
 async def handle_init_db(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     argv = session.args['argv']
     cleanup = True if '-c' in argv else False
     
@@ -106,11 +109,14 @@ blog remove -a  // 解绑本人所有博客
     shuffle(lines)
     lines = [get_random_header()] + lines
     for msg in multiline_msg_generator(lines=lines, lineno=False):
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg(group_id=group_id, message=msg)
 
 
 @on_command('reset_db', permission=SUPERUSER)
 async def handle_reset_db(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     group_id = session.ctx['group_id']
     DataManager(group_id).reset()
 
@@ -221,6 +227,9 @@ accounts
 
 @on_command('register_for', only_to_me=False, shell_like=True, permission=SUPERUSER)
 async def handle_register_for(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     await register_helper(session, for_other=True)
 
 
@@ -308,6 +317,9 @@ register https://leetcode.com/nuullll
 
 @on_command('registered', only_to_me=False, shell_like=True, permission=GROUP_ADMIN)
 async def query_registered(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     argv = session.args['argv']
     
     group_id = session.ctx['group_id']
@@ -330,7 +342,7 @@ async def query_registered(session: CommandSession):
         lines.append(msg)
     
     for msg in multiline_msg_generator(lines=lines, lineno=True):
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg(group_id=group_id, message=msg)
 
 
 @on_command('progress', only_to_me=False, permission=GROUP)
@@ -401,22 +413,29 @@ update
         
             if not ok:
                 await session.send("ID错误或网络错误！请检查后重试。")
+                continue
                 
             for msg in multiline_msg_generator(snapshot.lines):
-                await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+                await session.bot.send_msg(group_id=group_id, message=msg)
     else:
         dm = DataManager(group_id)
         accounts = dm.query_binded_accounts(qq_id)
         
         for user_id, platform in accounts:
             ok, snapshot = await dm.get_and_save_user_summary(qq_id, user_id, platform)
+
+            if not ok:
+                continue
                 
             for msg in multiline_msg_generator(snapshot.lines):
-                await session.bot.send_msg_rate_limited(user_id=724463877, message=msg)
+                await session.bot.send_msg(user_id=724463877, message=msg)
 
 
 @on_command('report', permission=GROUP_ADMIN)
 async def report(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     group_id = session.ctx['group_id']
 
     dm = DataManager(group_id)
@@ -436,11 +455,14 @@ async def report(session: CommandSession):
     await session.send(header)
 
     for msg in multiline_msg_generator(lines, lineno=True):
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg(group_id=group_id, message=msg)
 
 
 @on_command('report_total', permission=GROUP_ADMIN)
 async def report_total(session: CommandSession):
+    if not is_superuser(session):
+        return
+
     group_id = session.ctx['group_id']
     group_info = await session.bot.get_group_info(group_id=group_id)
     group_name = group_info['group_name']
@@ -464,11 +486,14 @@ async def report_total(session: CommandSession):
     await session.send(header)
 
     for msg in multiline_msg_generator(lines[:entries], lineno=True):
-        await session.bot.send_msg_rate_limited(group_id=group_id, message=msg)
+        await session.bot.send_msg(group_id=group_id, message=msg)
 
 
 @on_command('update_all', permission=GROUP_ADMIN)
 async def update_all(session: CommandSession):
+    if not is_superuser(session):
+        return
+        
     group_id = session.ctx['group_id']
 
     dm = DataManager(group_id)
@@ -478,9 +503,10 @@ async def update_all(session: CommandSession):
 
     for member in members:
         print(member)
-        ctx = {'debug': True, 'anonymous': None, 'font': 1623440, 'group_id': group_id, 'message': [{'type': 'text', 'data': {'text': 'report'}}], 'message_id': 20804, 'message_type': 'group', 'post_type': 'message', 'raw_message': 'report', 'self_id': 2210705648, 'sender': {'age': 24, 'area': '北京', 'card': '', 'level': '冒泡', 'nickname': 'Nuullll', 'role': 'owner', 'sex': 'unknown', 'title': '', 'user_id': 724463877}, 'sub_type': 'normal', 'time': 1584248424, 'user_id': 724463877, 'to_me': True}
+        ctx = get_fake_cqevent()
         ctx['sender'].update(member)
         ctx['user_id'] = member['user_id']
+        ctx['debug'] = True
         await call_command(nonebot.get_bot(), ctx, 'update')
     
     await session.finish("手动更新成功！")

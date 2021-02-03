@@ -13,10 +13,10 @@ async def debug(msg):
     await bot.send_private_msg(user_id=724463877, message=msg)
 
 
-@nb.scheduler.scheduled_job('cron', minute='*')
-async def heartbeat():
-    bot = nb.get_bot()
-    await bot.get_status()
+# @nb.scheduler.scheduled_job('cron', minute='*')
+# async def heartbeat():
+#     bot = nb.get_bot()
+#     print(await bot.get_status())
 
 
 @nb.scheduler.scheduled_job('cron', hour='18')
@@ -64,41 +64,31 @@ async def daily_update():
             await call_command(bot, event, 'report_total')
 
 
-@nb.scheduler.scheduled_job('cron', hour='8')
-async def get_latest_blogs():
-    bot = nb.get_bot()
-    # members = await session.bot.get_group_member_list(group_id=group_id)
-    # # build qq_id -> card dict
-    # card_dict = {member['user_id']: (member['card'] if member['card'] else member['nickname']) for member in members}
+# @nb.scheduler.scheduled_job('cron', hour='8')
+# async def get_latest_blogs():
+#     # query all
+#     recent_updated = []
+#     now = datetime.now()
 
-    # query all
-    recent_updated = []
-    now = datetime.now()
+#     url_map = DataManager.query_blog()
+#     for qq_id, blog_urls in url_map.items():
+#         for url in blog_urls:
+#             text, dt = guess_blog_update_time(url)
 
-    url_map = DataManager.query_blog()
-    for qq_id, blog_urls in url_map.items():
-        for url in blog_urls:
-            # if qq_id not in card_dict:
-            #     line = f"{render_cq_at(qq_id)} {url}"
-            # else:
-            #     line = f"{card_dict[qq_id]} {url}"
-            # lines.append(line)
-            text, dt = guess_blog_update_time(url)
+#             if text is None:
+#                 continue
 
-            if text is None:
-                continue
-
-            if (now - dt).days <= 2:
-                recent_updated.append((qq_id, url, dt.strftime("%Y-%m-%d")))
+#             if (now - dt).days <= 2:
+#                 recent_updated.append((qq_id, url, dt.strftime("%Y-%m-%d")))
     
-    if not recent_updated:
-        return
+#     if not recent_updated:
+#         return
 
-    lines = [f"{render_cq_at('all')} 以下博客近2天内有更新，大家快去学习吧"]
-    for qq_id, url, dt_str in recent_updated:
-        line = f"{render_cq_at(qq_id)} {url} {dt_str}"
-        lines.append(line)
+#     lines = [f"{render_cq_at('all')} 以下博客近2天内有更新，大家快去学习吧"]
+#     for qq_id, url, dt_str in recent_updated:
+#         line = f"{render_cq_at(qq_id)} {url} {dt_str}"
+#         lines.append(line)
     
-    for group_id in AUTO_BLOG_PUSHES:
-        for msg in multiline_msg_generator(lines=lines, lineno=False):
-            await bot.send_msg_rate_limited(group_id=group_id, message=msg)
+#     for group_id in AUTO_BLOG_PUSHES:
+#         for msg in multiline_msg_generator(lines=lines, lineno=False):
+#             await nb.get_bot().send_msg(group_id=group_id, message=msg)
