@@ -14,8 +14,8 @@ https://github.com/nonebot/nonebot2
 
 ### Plugins implementation
 
-- [ ] Repeat bullshit
-- [ ] Random reply (calling TURING api)
+- [x] Repeat bullshit
+- [x] Random reply (calling TURING api)
 - [ ] Help
 - [ ] Blog manager
 - [ ] OJ manager
