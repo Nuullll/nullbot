@@ -12,7 +12,7 @@ matcher = on_message(priority=10, block=False)
 
 async def callback(node: LFUNode):
   if node.count == plugin_config.repeat_threhold:
-    logger.info(f"Repeating bullshit: {node.key}")
+    logger.debug(f"Repeating bullshit: {node.key}")
     await node.object.send(node.key)
 
 message_cache = LFUCache(plugin_config.cache_capacity, callback)
