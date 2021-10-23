@@ -8,7 +8,7 @@ from .config import Config
 global_config = nonebot.get_driver().config
 plugin_config = Config(**global_config.dict())
 
-matcher = on_message()
+matcher = on_message(block=False)
 strategy = get_reply_strategy()
 
 @matcher.handle()

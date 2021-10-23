@@ -18,7 +18,7 @@ def refresh_quota_daily(last_timestamp: datetime):
   return now.date() != last_timestamp.date()
 
 class ReplyStrategy:
-  def __init__(self, predicate_func, refresh_quota_func = refresh_quota_daily, quota_limit = float('inf')):
+  def __init__(self, predicate_func, quota_limit = plugin_config.daily_api_quota, refresh_quota_func = refresh_quota_daily):
     self.predicate = predicate_func
     self.refresh = refresh_quota_func
     self.quota_limit = quota_limit
@@ -36,11 +36,19 @@ class ReplyStrategy:
     if not self.is_available():
       return
 
-    if self.predicate(event):
-      reply = await self.request_api(event)
-      logger.debug(f"Turingbot reply: {reply}")
-      if reply:
-        await matcher.send(reply)
+    should_reply = self.predicate(event)
+    if should_reply:
+      await self.do_reply(event, matcher)
+    self.post_reply(should_reply, event)
+
+  async def do_reply(self, event: MessageEvent, matcher: Matcher):
+    reply = await self.request_api(event)
+    logger.debug(f"Turingbot reply: {reply}")
+    if reply:
+      await matcher.send(reply)
+
+  def post_reply(self, replied: bool, event: MessageEvent):
+    return
 
   async def request_api(self, event: MessageEvent):
     message = str(event.get_message())
@@ -89,9 +97,27 @@ class UniformProbStrategy(ReplyStrategy):
     return t < plugin_config.uniform_prob
 
   def __init__(self):
-    super().__init__(UniformProbStrategy.predicate, refresh_quota_daily, plugin_config.daily_api_quota)
+    super().__init__(UniformProbStrategy.predicate)
+
+class UniformAndBoostStrategy(ReplyStrategy):
+  """Reply probability is uniform at the normal state,
+  and is boosted to a higher value agaist the user to whom the bot have just replied."""
+  def predicate(self, event: MessageEvent):
+    p = plugin_config.boosted_prob if event.user_id == self.last_replied_user_id else plugin_config.uniform_prob
+    t = random.uniform(0, 1)
+    logger.debug(f"UniformAndBoost predicate: {t} < {p}?")
+    return t < p
+
+  def __init__(self):
+    self.last_replied_user_id = None
+    super().__init__(self.predicate)
+  
+  def post_reply(self, replied: bool, event: MessageEvent):
+    self.last_replied_user_id = event.user_id if replied else None
 
 def get_reply_strategy():
   if plugin_config.strategy == "uniform":
     return UniformProbStrategy()
+  if plugin_config.strategy == "uniform_and_boost":
+    return UniformAndBoostStrategy()
   raise NotImplementedError(f"{plugin_config.strategy} reply strategy not implemented!")
