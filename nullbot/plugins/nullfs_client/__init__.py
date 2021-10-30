@@ -4,6 +4,7 @@ from nonebot import on_message
 from nonebot.log import logger
 from nonebot.adapters.cqhttp import Bot, MessageEvent
 from nonebot.matcher import Matcher
+from nonebot.permission import SUPERUSER
 from .config import Config
 
 global_config = nonebot.get_driver().config
@@ -13,7 +14,7 @@ def mount_nullfs():
   with httpx.Client() as client:
     client.post(f"{plugin_config.nullfs_api_url}/mount", data={'mount_point': plugin_config.nullfs_mount_point})
 
-matcher = on_message(priority=1, block=False)
+matcher = on_message(priority=1, block=False, permission=SUPERUSER)
 
 @matcher.handle()
 async def nullfs_entry(bot: Bot, event: MessageEvent, matcher: Matcher):
